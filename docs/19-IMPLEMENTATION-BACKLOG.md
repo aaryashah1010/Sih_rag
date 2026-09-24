@@ -8,7 +8,8 @@ Create monorepo structure.
 
 **DoD**
 - web builds;
-- API starts;
+- Node.js public API starts;
+- FastAPI RAG service starts;
 - Docker Compose starts.
 
 ### P0.2
@@ -17,7 +18,38 @@ Add PostgreSQL + pgvector migration.
 
 **DoD**
 - schema migration runs from empty DB;
+- `app`, `rag` and `audit` schemas are created;
+- Node.js and FastAPI runtime roles cannot write each other's schema;
 - rollback strategy documented.
+
+### P0.3 Public Node.js foundation
+
+Implement:
+
+- request IDs and structured logging;
+- JWT authentication middleware;
+- session/message repositories;
+- RFC Problem Details errors;
+- FastAPI internal client with timeout and service authentication.
+
+**DoD**
+- ordinary session/message CRUD works without FastAPI;
+- duplicate `Idempotency-Key` values do not duplicate a chat message;
+- FastAPI outage does not break ordinary profile/session routes.
+
+### P0.4 FastAPI RAG foundation
+
+Implement:
+
+- `/internal/v1/health`;
+- `/internal/v1/rag/query` request/response models;
+- service-token validation;
+- PostgreSQL repositories for the `rag` schema;
+- correlation ID propagation.
+
+**DoD**
+- browser/public token cannot call the internal API;
+- OpenAPI contract passes Node.js consumer tests.
 
 ## Phase 1 — Corpus and MVP RAG
 
@@ -103,6 +135,16 @@ DoD:
 - evidence drawer;
 - disclaimer;
 - confidence.
+
+### P1.11 End-to-end orchestration
+
+DoD:
+
+- web calls Node.js only;
+- Node.js persists the user message before invoking FastAPI;
+- FastAPI returns a structured RAG result;
+- Node.js persists and returns the answer/citations;
+- timeout, abstention and infrastructure failure are visibly distinct.
 
 ## Phase 2 — Classification and regulated routing
 
@@ -195,15 +237,15 @@ Add treaty status/version metadata.
 ## Coding order
 
 ```text
-1. DB
-2. ingestion
-3. retrieval
-4. grounded answer
-5. verifier
-6. API
-7. UI
-8. classifier
-9. tools
+1. Docker/PostgreSQL platform
+2. Node.js and FastAPI service skeletons
+3. schema migrations and service roles
+4. ingestion
+5. retrieval
+6. grounded answer and verifier
+7. Node.js/FastAPI contract integration
+8. UI
+9. classifier and tools
 10. multilingual
 11. graph
 12. production hardening

@@ -23,7 +23,6 @@ User interaction may be in:
 - Odia
 - Punjabi
 - other supported languages based on the active BHASHINI model catalog
-```
 
 ## 2. Text flow
 

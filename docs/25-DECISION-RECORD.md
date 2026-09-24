@@ -91,3 +91,38 @@ No Neo4j dependency in Phase 1.
 ### Rationale
 
 Base RAG can be proven first; graph is added when relationship reasoning has demonstrated value.
+
+## ADR-009 - Node.js public API and FastAPI internal RAG service
+
+### Context
+
+The product needs ordinary web application operations as well as Python-heavy document and AI processing.
+
+### Decision
+
+Use Node.js as the only browser-facing API for authentication, users, sessions, messages and orchestration. Use FastAPI as a private service for ingestion, classification, retrieval, model calls and citation verification.
+
+### Rationale
+
+- keeps the public application workflow in the team's Node.js stack;
+- preserves the Python ecosystem for RAG and document processing;
+- prevents model/provider details from leaking into public routes;
+- allows API and RAG workloads to scale independently.
+
+### Consequence
+
+The two services require a versioned internal contract, correlation IDs, service authentication and explicit timeout behavior.
+
+## ADR-010 - One PostgreSQL instance with schema ownership
+
+### Context
+
+The MVP benefits from a small Docker footprint, but an unrestricted shared database would blur service ownership.
+
+### Decision
+
+Use one PostgreSQL + pgvector instance with `app`, `rag` and `audit` schemas. Node.js and FastAPI use separate least-privilege roles and separate migration histories.
+
+### Consequence
+
+The database can be split later, while the MVP retains simple backup and deployment. Cross-service data exchange still occurs through HTTP contracts, not by writing another service's tables.

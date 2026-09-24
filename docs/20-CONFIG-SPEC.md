@@ -12,6 +12,11 @@ app:
   default_language: en
   default_jurisdiction: INDIA
 
+services:
+  public_api: http://api-node:3000
+  rag_internal: http://rag-fastapi:8000
+  rag_timeout_seconds: 60
+
 retrieval:
   lexical_top_k: 50
   vector_top_k: 50
@@ -65,9 +70,13 @@ ingestion:
 
 ```text
 APP_ENV
-DATABASE_URL
+NODE_DATABASE_URL
+RAG_DATABASE_URL
+RAG_SERVICE_URL
+RAG_SERVICE_TOKEN
 REDIS_URL
-JWT_SECRET
+JWT_ACCESS_SECRET
+JWT_REFRESH_SECRET
 OBJECT_STORAGE_URL
 OBJECT_STORAGE_ACCESS_KEY
 OBJECT_STORAGE_SECRET_KEY
@@ -80,6 +89,8 @@ NEO4J_URI
 NEO4J_USER
 NEO4J_PASSWORD
 ```
+
+`NODE_DATABASE_URL` uses the `node_runtime` role and `RAG_DATABASE_URL` uses the `rag_runtime` role. Do not point both services at a migration-owner credential.
 
 ## 4. Versioning
 

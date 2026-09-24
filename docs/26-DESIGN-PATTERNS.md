@@ -5,18 +5,16 @@
 Use a modular layered architecture with dependency inversion at provider boundaries.
 
 ```text
-API
- ↓
-Application services
- ↓
-Domain logic
- ↓
-Repository interfaces
- ↓
-Infrastructure adapters
+Public web API (Node.js)
+  -> application/domain services
+  -> app repositories and FastAPI client
+
+Internal RAG API (FastAPI)
+  -> RAG application/domain services
+  -> rag repositories and provider adapters
 ```
 
-The domain must not import FastAPI, SQLAlchemy, requests, Bhashini SDKs, Neo4j clients, or model-serving clients directly.
+The Node.js domain must not import web-framework or FastAPI-client details. The Python domain must not import FastAPI, SQLAlchemy, HTTP clients, Bhashini SDKs, Neo4j clients or model-serving clients directly.
 
 ## 2. Repository pattern
 
@@ -178,13 +176,46 @@ Use repositories.
 
 ### Provider logic in routes
 
-FastAPI routes should orchestrate application services, not contain Bhashini/IP India/LLM details.
+Node.js routes should validate public requests and invoke application services, not contain SQL or RAG logic. FastAPI routes should invoke RAG application services, not contain Bhashini/IP India/LLM details.
+
+### Browser-to-FastAPI calls
+
+The web app must use the Node.js public API. FastAPI is an internal service and must not become a second public backend.
+
+### Shared-database ownership leaks
+
+Node.js writes only the `app` schema and FastAPI writes only the `rag` schema. Sharing a PostgreSQL instance is not permission to bypass the service contract.
 
 ### Mutable corpus records
 
 Never update legal text in place. Create versions.
 
-## 11. Suggested Python package boundaries
+## 11. Suggested Node.js package boundaries
+
+```text
+src/
+|-- domain/
+|   |-- users/
+|   |-- sessions/
+|   `-- escalations/
+|-- application/
+|   |-- chat/
+|   |-- messages/
+|   `-- consent/
+|-- ports/
+|   |-- rag-client.ts
+|   `-- repositories.ts
+|-- infrastructure/
+|   |-- postgres/
+|   |-- auth/
+|   `-- rag-http/
+`-- api/
+    |-- routes/
+    |-- middleware/
+    `-- errors/
+```
+
+## 12. Suggested Python package boundaries
 
 ```text
 src/

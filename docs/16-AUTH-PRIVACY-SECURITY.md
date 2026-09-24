@@ -36,6 +36,8 @@ INGESTION_SERVICE
   -> source fetch/index only
 ```
 
+The browser authenticates only to the Node.js public API. FastAPI is private and accepts a short-lived service token from Node.js or an authorized worker; it must not trust a browser JWT as service authentication. PostgreSQL uses separate `node_runtime` and `rag_runtime` roles with schema-scoped grants.
+
 ## 3. Privacy principle
 
 The product may receive unpublished inventions or business information. Therefore:
@@ -93,8 +95,11 @@ Never commit:
 Environment variables:
 
 ```text
-DATABASE_URL
-JWT_SECRET
+NODE_DATABASE_URL
+RAG_DATABASE_URL
+JWT_ACCESS_SECRET
+JWT_REFRESH_SECRET
+RAG_SERVICE_TOKEN
 BHASHINI_INFERENCE_API_KEY
 MODEL_ENDPOINT
 OBJECT_STORAGE_URL
@@ -102,6 +107,8 @@ OBJECT_STORAGE_ACCESS_KEY
 OBJECT_STORAGE_SECRET_KEY
 REDIS_URL
 ```
+
+Rotate service and JWT credentials independently. Never send database or model credentials to the web client.
 
 ## 7. Threat model
 
@@ -121,6 +128,16 @@ Mitigation:
 - source authorization checks;
 - redaction;
 - rate limits.
+
+### Internal service impersonation
+
+Mitigation:
+
+- keep FastAPI off public ingress;
+- authenticate Node.js-to-FastAPI calls with short-lived service credentials;
+- validate audience and expiry;
+- rotate keys and reject browser tokens;
+- propagate request IDs for audit.
 
 ### Registry abuse
 

@@ -12,7 +12,7 @@ This documentation turns the existing IP-SAKTI idea into an implementation-ready
 
 The product is a multilingual, source-cited AI assistant for Ayurveda-related intellectual property and regulatory guidance. It is designed to separate Indian and international regimes, classify the user's product/use case, retrieve evidence from authoritative sources, generate a grounded explanation, verify citations, and abstain/escalate when evidence is insufficient.
 
-The uploaded project plan defines the core concept as a chatbot that answers Ayurveda IP questions, shows the exact law/source behind an answer, separates Indian and international law, and supports regional language/voice interaction. The pitch further specifies React/Vite/Tailwind, FastAPI, PostgreSQL + pgvector, hybrid retrieval, local cross-encoder reranking, open-source LLMs, PyMuPDF/Tesseract, Bhashini/Indic models and Docker/JWT. The blueprint below adopts that latter architecture as the implementation baseline.
+The uploaded project plan defines the core concept as a chatbot that answers Ayurveda IP questions, shows the exact law/source behind an answer, separates Indian and international law, and supports regional language/voice interaction. The implementation baseline uses React/Vite/Tailwind, a Node.js public API, an internal FastAPI RAG service, PostgreSQL + pgvector, hybrid retrieval, a local cross-encoder, open-source LLMs, PyMuPDF/Tesseract, Bhashini/Indic models, Docker and JWT.
 
 ## 2. Documentation map
 
@@ -43,6 +43,9 @@ The uploaded project plan defines the core concept as a chatbot that answers Ayu
 | `22-CASE-LAW-CORPUS.md` | Optional case-law ingestion and citation policy |
 | `23-OPERATIONS-RUNBOOK.md` | Ingestion, rollback, incidents, monitoring and maintenance |
 | `24-RESEARCH-REFERENCES.md` | Official sources and research notes |
+| `25-DECISION-RECORD.md` | Architecture decisions and their consequences |
+| `26-DESIGN-PATTERNS.md` | Node.js/Python coding boundaries and implementation patterns |
+| `27-SEQUENCE-DIAGRAMS.md` | Runtime flows across web, Node.js, FastAPI and PostgreSQL |
 
 ## 3. Project rules
 
@@ -61,6 +64,14 @@ The uploaded project plan defines the core concept as a chatbot that answers Ayu
 
 The first architecture document suggested interchangeable vector stores such as ChromaDB, Weaviate or Pinecone. The SIH technical approach later narrowed this to PostgreSQL + pgvector with hybrid keyword + vector retrieval and a local cross-encoder. This blueprint standardizes on PostgreSQL + pgvector so structured metadata, vectors, audit records and application state stay in one operational datastore.
 
+The public/backend boundary is also fixed:
+
+- the browser communicates only with the Node.js API;
+- Node.js handles ordinary input/output, authentication, authorization, user/session data and API orchestration;
+- FastAPI is private to the Docker network and handles RAG, ingestion, model inference and evidence verification;
+- Node.js calls FastAPI through a versioned internal HTTP contract;
+- each service owns its PostgreSQL schema and migration history.
+
 Neo4j remains an optional Phase 2/3 component for graph-heavy reasoning. The application must not depend on Neo4j for the Phase 1 MVP.
 
 ## 5. Definition of "implementation-ready"
@@ -70,15 +81,9 @@ The documentation is considered ready when the team can create the repository us
 ```text
 apps/
   web/
-  api/
+  api-node/
 services/
-  ingestion/
-  retrieval/
-  classification/
-  agents/
-  registries/
-  language/
-  citations/
+  rag-fastapi/
 infra/
   docker/
   migrations/
@@ -89,6 +94,3 @@ data/
 docs/
   (this documentation set)
 ```
-
-- `26-DESIGN-PATTERNS.md`
-- `27-SEQUENCE-DIAGRAMS.md`

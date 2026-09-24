@@ -1,276 +1,217 @@
-# System Architecture — IP-SAKTI Sahayak
+# System Architecture - IP-SAKTI Sahayak
 
 ## 1. Architectural goals
 
-The architecture is designed around one principle:
+The system follows two principles:
 
-> **The language model explains evidence; it does not become the legal database.**
+> The language model explains evidence; it does not become the legal database.
 
-The system therefore separates:
+> Node.js owns the public application workflow; FastAPI owns the AI/RAG workflow.
 
-- user interaction;
-- language processing;
-- deterministic policy/classification;
-- retrieval;
-- optional agent/tool orchestration;
-- generation;
-- citation verification;
-- confidence/abstention;
-- audit.
+This split keeps normal product operations simple while allowing Python-native document, embedding, reranking and model libraries to remain inside the RAG service.
 
-## 2. Logical architecture
+## 2. Service responsibilities
 
-```text
-                         ┌────────────────────────────┐
-                         │         React Web App       │
-                         │ Chat / Classification /     │
-                         │ Evidence / Voice / Escalate│
-                         └─────────────┬──────────────┘
-                                       │ HTTPS
-                         ┌─────────────▼──────────────┐
-                         │        FastAPI Gateway      │
-                         │ Auth • Rate Limit • Session │
-                         └─────────────┬──────────────┘
-                                       │
-                    ┌──────────────────▼───────────────────┐
-                    │         Query Understanding           │
-                    │ language • intent • entities •      │
-                    │ jurisdiction • product signals       │
-                    └──────────────────┬───────────────────┘
-                                       │
-                    ┌──────────────────▼───────────────────┐
-                    │  Deterministic Policy + Classifier    │
-                    │ product class • legal domains •       │
-                    │ required follow-up questions          │
-                    └──────────────────┬───────────────────┘
-                                       │
-              ┌────────────────────────▼────────────────────────┐
-              │                Agent / Tool Router              │
-              │ RAG Search | ABS Helper | TK Pointer |         │
-              │ Registry Adapter | Human Escalation            │
-              └───────────────┬───────────────────────┬─────────┘
-                              │                       │
-                 ┌────────────▼────────────┐   ┌────▼────────────┐
-                 │   Retrieval Service      │   │ External Tools │
-                 │ keyword + vector +       │   │ IP India       │
-                 │ filters + reranker       │   │ NBA/eABS       │
-                 └────────────┬────────────┘   │ eCourts (opt.) │
-                              │                 └────┬────────────┘
-                              │                      │
-                 ┌────────────▼──────────────────────▼────────────┐
-                 │            Evidence Context Builder             │
-                 │ source version • section • paragraph • score   │
-                 └────────────────────────┬───────────────────────┘
-                                          │
-                              ┌───────────▼───────────┐
-                              │  Local Open-Source LLM │
-                              │  grounded generation  │
-                              └───────────┬───────────┘
-                                          │
-                       ┌──────────────────▼───────────────────┐
-                       │ Citation Verifier + Confidence       │
-                       │ claim extraction • support checks    │
-                       │ contradiction / threshold / abstain  │
-                       └──────────────────┬───────────────────┘
-                                          │
-                         ┌────────────────▼────────────────┐
-                         │ Answer Formatter / Localization │
-                         └────────────────┬────────────────┘
-                                          │
-                         ┌────────────────▼────────────────┐
-                         │ UI: Answer + Citations +        │
-                         │ Confidence + Disclaimer + CTA   │
-                         └─────────────────────────────────┘
+| Component | Owns | Must not own |
+|---|---|---|
+| React web app | UI state, forms, chat rendering, evidence display, voice capture | database access, model calls, secrets |
+| Node.js API | public REST API, JWT/auth, users, sessions, messages, consent, rate limits, request orchestration, response persistence | embeddings, vector search, prompts, direct model logic |
+| FastAPI RAG service | query understanding, classification, ingestion, hybrid retrieval, reranking, grounded generation, citation verification, language/model adapters | public authentication, user CRUD, browser-facing routes |
+| PostgreSQL + pgvector | application records, corpus metadata, vectors, retrieval/audit records | business orchestration |
+| Object storage | original PDFs, parsed/OCR artifacts, corpus manifests | mutable application records |
 
-Shared infrastructure:
-  PostgreSQL + pgvector
-  Object storage
-  Optional Neo4j
-  Redis (rate limits/cache/task queue if needed)
-  Structured logs / metrics
+## 3. Logical architecture
+
+```mermaid
+flowchart LR
+    U[User] --> W[React Web App]
+    W -->|HTTPS /api/v1| N[Node.js Public API]
+    N -->|HTTP /internal/v1| F[FastAPI RAG Service]
+    N -->|app schema| P[(PostgreSQL + pgvector)]
+    F -->|rag and audit schemas| P
+    F --> O[(Object Storage)]
+    F --> M[Local Model Runtime]
+    F --> X[Authorized External Services]
+
+    subgraph Docker Network
+      N
+      F
+      P
+      O
+      M
+    end
 ```
 
-## 3. Deployment topology
+Only the web app and Node.js API are exposed outside the private Docker network. FastAPI, PostgreSQL, object storage and model endpoints are internal services.
 
-### MVP
+## 4. Request classes
 
-Single Linux server:
+### 4.1 Normal application request
 
-```text
-Nginx
-  ├── web container
-  └── API container
-       ├── PostgreSQL/pgvector
-       ├── optional Redis
-       └── local model runtime
-```
-
-For a demo, the model may be served by a local inference engine. The architecture should keep an abstraction around model serving so the LLM can later move to a dedicated GPU host.
-
-### Scaled deployment
+Examples: login, create session, list messages, update preferences, read escalation status.
 
 ```text
-CDN
-  -> Nginx / ingress
-  -> web
-  -> API replicas
-      -> retrieval workers
-      -> ingestion workers
-      -> model serving
-      -> PostgreSQL primary/read replicas
-      -> object storage
-      -> Redis
-      -> Neo4j (optional)
+Web -> Node.js -> PostgreSQL(app schema) -> Node.js -> Web
 ```
 
-## 4. Request lifecycle
+FastAPI is not involved.
 
-### Step 1 — Receive
+### 4.2 RAG chat request
 
-FastAPI validates:
+```text
+Web
+  -> Node.js: authenticate, validate, persist user message
+  -> FastAPI: internal RAG request with correlation IDs
+  -> PostgreSQL: filtered lexical + vector retrieval
+  -> model: grounded draft
+  -> verifier: citations and confidence
+  -> Node.js: persist final answer and public response
+  -> Web: render answer, evidence and decision
+```
 
-- auth;
-- language;
-- jurisdiction;
-- message size;
-- optional product context.
+### 4.3 Ingestion request
 
-### Step 2 — Normalize
+An admin asks Node.js to start ingestion. Node.js authorizes the action and creates a job request. FastAPI performs fetch, parsing/OCR, chunking, embedding and corpus validation asynchronously. Long-running ingestion must return `202 Accepted` with a job ID rather than hold an HTTP request open.
 
-- Unicode normalization.
-- Script detection.
-- spelling variants.
-- transliteration preservation.
-- PII redaction for logs where applicable.
+## 5. Public and internal contracts
 
-### Step 3 — Understand
+### Public Node.js API
 
-Generate a structured query object:
+Base path: `/api/v1`
+
+- accepts browser traffic;
+- verifies access tokens and permissions;
+- applies public rate and payload limits;
+- owns idempotency for mutating requests;
+- returns the stable client-facing error format.
+
+### Internal FastAPI API
+
+Base path: `/internal/v1`
+
+- accepts traffic only from Node.js or authorized workers;
+- requires a service credential or signed service token;
+- accepts `trace_id`, `request_id`, `session_id` and `message_id` for correlation;
+- returns structured results, never UI-formatted HTML;
+- is not reachable from the browser or public ingress.
+
+Initial internal endpoints:
+
+```text
+POST /internal/v1/rag/query
+POST /internal/v1/classify
+POST /internal/v1/evidence/search
+POST /internal/v1/ingestion/jobs
+GET  /internal/v1/ingestion/jobs/{job_id}
+GET  /internal/v1/health
+```
+
+## 6. RAG request lifecycle
+
+1. Node.js authenticates the user, validates the public request and stores the user message.
+2. Node.js calls FastAPI with IDs and normalized product/jurisdiction context.
+3. FastAPI normalizes Unicode, detects language and redacts sensitive log fields.
+4. The classifier produces intent, product category, legal domains and required follow-up questions.
+5. Retrieval applies hard jurisdiction, legal-domain, source-status and effective-date filters.
+6. PostgreSQL full-text and pgvector candidates are fused and reranked.
+7. The context builder selects approximately 6-12 evidence units within the token budget.
+8. The model generates only from supplied evidence and emits citation IDs.
+9. The verifier checks claim support, source permissions, citation validity and contradictions.
+10. FastAPI returns `PASS`, `PASS_WITH_CAUTION`, `ABSTAIN` or `ESCALATE` with evidence metadata.
+11. Node.js stores the answer, claims/citations summary and audit correlation, then returns the public response.
+
+Example internal query object:
 
 ```json
 {
-  "intent": "patentability",
+  "request_id": "uuid",
+  "trace_id": "uuid",
+  "session_id": "uuid",
+  "message_id": "uuid",
+  "query": "Can I patent this neem formulation?",
+  "language": "en",
   "jurisdiction": "INDIA",
-  "product_category": "PATENT_PROPRIETARY_MEDICINE",
-  "legal_domains": ["PATENT", "TRADITIONAL_KNOWLEDGE"],
-  "entities": {
-    "ingredients": ["neem", "tulsi"]
-  },
-  "needs_live_registry": false
+  "product_context": {
+    "ingredients": ["neem"]
+  }
 }
 ```
 
-### Step 4 — Retrieve
+## 7. PostgreSQL ownership
 
-Apply hard metadata filters before semantic search.
+One Dockerized PostgreSQL instance is sufficient for the MVP, but ownership is separated by schemas and credentials:
 
-Example:
+| Schema | Writer | Main data |
+|---|---|---|
+| `app` | Node.js | organizations, users, sessions, messages, answers, consent, escalations |
+| `rag` | FastAPI | sources, documents, chunks, embeddings, corpus versions, retrieval runs |
+| `audit` | both through append-only repositories | security and processing events |
 
-```sql
-WHERE jurisdiction IN ('INDIA', 'BOTH')
-  AND source_status = 'ACTIVE'
-  AND legal_domain IN ('PATENT', 'TRADITIONAL_KNOWLEDGE')
-```
+Rules:
 
-### Step 5 — Rerank
+- Node.js does not write `rag` tables.
+- FastAPI does not modify users, sessions or messages.
+- shared identifiers are UUIDs supplied in service contracts.
+- each service uses a separate least-privilege database role.
+- platform migrations create extensions and schemas before service migrations run.
 
-The top ~30–50 raw candidates are reranked and the best ~6–12 evidence units are placed into the generation context.
-
-### Step 6 — Generate
-
-The model receives only:
-
-- system policy;
-- user question;
-- classification context;
-- retrieved evidence;
-- citation IDs.
-
-### Step 7 — Verify
-
-The verifier checks that:
-
-- each factual claim references a citation ID;
-- citation IDs exist;
-- referenced chunks contain supporting text;
-- the source jurisdiction is permitted;
-- no restricted source content is reproduced.
-
-### Step 8 — Decide
+## 8. MVP deployment
 
 ```text
-PASS
-PASS_WITH_LOW_CONFIDENCE
-ABSTAIN
-ESCALATE
+Internet
+  -> reverse proxy
+      -> web container
+      -> Node.js API container
+            -> FastAPI RAG container
+            -> PostgreSQL + pgvector container
+            -> optional Redis container
+            -> object storage container
+            -> local model runtime
 ```
 
-### Step 9 — Localize
+For the SIH demo, Docker Compose runs the stack on one host. A production deployment may scale Node.js, FastAPI workers and model serving independently without changing the public API.
 
-Translate/format answer for the user's requested language, preserving legal names, section numbers and citations exactly.
+## 9. Timeouts and resilience
 
-### Step 10 — Audit
+Recommended starting budgets:
 
-Store an immutable answer record with:
+| Operation | Timeout | Behavior |
+|---|---:|---|
+| Node.js -> FastAPI chat | 60 s | return a traceable `503`/`504`; never invent an answer |
+| FastAPI -> registry adapter | 5 s | mark live data unavailable and continue with corpus evidence where valid |
+| embedding/reranker call | 15 s | retry once for transient failure, then abstain |
+| local LLM generation | 45 s | cancel work and return service-unavailable decision |
+| ordinary Node.js DB request | 5 s | fail fast and log correlation ID |
 
-- prompt hash;
-- normalized query;
-- corpus version;
-- source version IDs;
-- retrieval scores;
-- model version;
-- policy version;
-- verifier result;
-- final decision.
+Use bounded retries with jitter only for idempotent operations. A browser retry must not duplicate messages or ingestion jobs; use an `Idempotency-Key` on public mutating endpoints.
 
-## 5. Module boundaries
+## 10. Observability
 
-Use interfaces, not cross-module database spaghetti.
+Propagate these fields across Node.js, FastAPI and database audit records:
 
 ```text
-api/
-  routes/
-  dependencies/
-
-domain/
-  query/
-  classification/
-  legal/
-  answer/
-
-services/
-  retrieval/
-  generation/
-  verification/
-  localization/
-  escalation/
-
-adapters/
-  sources/
-  registries/
-  language/
-
-repositories/
-  users/
-  documents/
-  chunks/
-  conversations/
-  audits/
-
-workers/
-  ingestion/
-  indexing/
-  evaluation/
+trace_id
+request_id
+user_id (redacted where required)
+session_id
+message_id
+retrieval_run_id
+answer_id
+corpus_version_id
 ```
 
-## 6. Failure isolation
+Log structured metadata and hashes rather than raw confidential questions. Track p50/p95 latency separately for Node.js, retrieval, reranking, generation and verification.
 
-An external source must never be able to take down the core chat service.
+## 11. Failure isolation
 
-Examples:
+- FastAPI unavailable: ordinary Node.js endpoints remain available; RAG routes return a clear service-unavailable response.
+- IP India or another registry unavailable: mark the dynamic lookup unavailable; corpus RAG can continue when appropriate.
+- BHASHINI unavailable: fall back to supported text language; do not silently mistranslate.
+- embedding service unavailable: retry within budget, then abstain.
+- model unavailable: return an error or queued status, never generate from memory.
+- PostgreSQL unavailable: both services fail readiness and stop accepting dependent work.
+- optional Neo4j unavailable: graph-assisted reasoning is disabled; base RAG remains usable.
 
-- IP India unavailable -> registry result marked unavailable; corpus RAG still works.
-- Bhashini unavailable -> text input/output still works in supported fallback language.
-- Neo4j unavailable -> graph-assisted reasoning disabled; base RAG remains usable.
-- embedding service unavailable -> request can retry; do not generate from memory.
-- LLM unavailable -> return service error/queue, not fabricated content.
+## 12. Scale-out path
+
+The first scale step is independent replicas for Node.js and FastAPI behind internal/public load balancers. Add Redis only when distributed rate limiting, caching or a task queue is required. Add dedicated model hosts or OpenSearch only after measurements show PostgreSQL or local inference is the bottleneck. Neo4j remains optional and is not required for the MVP.
