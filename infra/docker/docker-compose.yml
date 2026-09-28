@@ -1,0 +1,60 @@
+name: ipsakti
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ipsakti
+      POSTGRES_USER: migration_owner
+      POSTGRES_PASSWORD: ${POSTGRES_MIGRATION_PASSWORD:-migration_dev_password}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U migration_owner -d ipsakti"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  api-node:
+    build:
+      context: ../../apps/api-node
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      RAG_BASE_URL: http://rag-fastapi:8000
+      RAG_SERVICE_TOKEN: ${RAG_SERVICE_TOKEN:-local-development-token-change-me}
+      NODE_DATABASE_URL: postgresql://node_runtime:node_dev_password@postgres:5432/ipsakti
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rag-fastapi:
+        condition: service_started
+    networks:
+      - backend
+
+  rag-fastapi:
+    build:
+      context: ../../services/rag-fastapi
+    environment:
+      RAG_ENV: development
+      PORT: 8000
+      RAG_SERVICE_TOKEN: ${RAG_SERVICE_TOKEN:-local-development-token-change-me}
+      RAG_DATABASE_URL: postgresql://rag_runtime:rag_dev_password@postgres:5432/ipsakti
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    driver: bridge
