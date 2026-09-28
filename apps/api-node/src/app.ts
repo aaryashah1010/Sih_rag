@@ -1,8 +1,12 @@
-import Fastify from "fastify";
-import { registerHealthRoutes } from "./routes/health.js";
+import express from "express";
+import { healthRouter } from "./api/routes/health.routes.js";
+import { errorHandler } from "./api/middleware/error-handler.js";
 
-export async function buildApp() {
-  const app = Fastify({ logger: true });
-  await registerHealthRoutes(app);
+export function buildApp() {
+  const app = express();
+  app.disable("x-powered-by");
+  app.use(express.json({ limit: "1mb" }));
+  app.use(healthRouter);
+  app.use(errorHandler);
   return app;
 }
