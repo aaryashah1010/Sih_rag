@@ -69,14 +69,21 @@ def parse_document(path: Path, content_type: str, allowed_scripts: list[str]) ->
     raise ValueError(f"Unsupported document content type: {content_type}")
 
 
+# The amendment marker (e.g. "7[14. Consideration...") is optional: amended sections carry a
+# leading footnote-reference bracket that would otherwise hide the real section number.
 SECTION_HEADER = re.compile(
-    r"^\s*((?:SECTION\s+)?\d+[A-Za-z]?(?:\([0-9A-Za-z]+\))?\.)\s+(.{3,180}?)(?:\.\s|[—–-]|$)",
+    r"^\s*(?:\d+\[)?((?:SECTION\s+)?(\d+)[A-Za-z]?(?:\([0-9A-Za-z]+\))?\.)\s+(.{3,180}?)(?:\.\s|[—–-]|$)",
     re.IGNORECASE,
 )
 FOOTNOTE_START = re.compile(
     r"^(?:ins\b|subs?\b|omitted\b|clause\b|sub-clause\b|the proviso\b|the words?\b|the brackets?\b|for the words?\b)",
     re.IGNORECASE,
 )
+SCHEDULE_START = re.compile(r"^\s*THE\s+(FIRST\s+|SECOND\s+|THIRD\s+|FOURTH\s+)?SCHEDULE\b", re.IGNORECASE)
+# A genuine next section is at most this many numbers ahead of the current one. This rejects
+# footnote/amendment-note lines (e.g. "3. Section 1�" inside an amending Act) that would
+# otherwise be mistaken for a new top-level section and relabel the following real section.
+MAX_FORWARD_SECTION_GAP = 5
 
 
 def group_by_legal_section(pages: list[TextPage]) -> list[tuple[str, int, int, str]]:
@@ -85,6 +92,8 @@ def group_by_legal_section(pages: list[TextPage]) -> list[tuple[str, int, int, s
     current_start = pages[0].page_number if pages else 1
     current_end = current_start
     current_lines: list[str] = []
+    current_number = 0
+    in_schedule = False
 
     def flush() -> None:
         nonlocal current_lines
@@ -95,16 +104,22 @@ def group_by_legal_section(pages: list[TextPage]) -> list[tuple[str, int, int, s
 
     for page in pages:
         current_end = page.page_number
-        for line in page.text.splitlines():
-            match = SECTION_HEADER.match(line)
-            if match and not FOOTNOTE_START.match(match.group(2).strip()):
-                flush()
-                current_label = f"{match.group(1)} {match.group(2).strip()}"
-                current_start = page.page_number
-                current_end = page.page_number
-                current_lines = [line.strip()]
-            else:
-                current_lines.append(line.strip())
+        for raw_line in page.text.splitlines():
+            line = raw_line.strip()
+            if SCHEDULE_START.match(line):
+                in_schedule = True
+            match = None if in_schedule else SECTION_HEADER.match(line)
+            if match and not FOOTNOTE_START.match(match.group(3).strip()):
+                section_number = int(match.group(2))
+                if current_number <= section_number <= current_number + MAX_FORWARD_SECTION_GAP:
+                    flush()
+                    current_label = f"{match.group(1)} {match.group(3).strip()}"
+                    current_start = page.page_number
+                    current_end = page.page_number
+                    current_lines = [line]
+                    current_number = section_number
+                    continue
+            current_lines.append(line)
     flush()
     return [(label, start, end, text[0]) for label, start, end, text in groups]
 

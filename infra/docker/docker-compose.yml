@@ -1,14 +1,25 @@
 name: ipsakti
 
+# Local development and SIH demo stack.
+#   docker compose -f infra/docker/docker-compose.yml up --build
+# Startup order: postgres healthy -> db-platform -> rag-migrate -> api-migrate -> rag-fastapi -> api-node.
+# Every ${VAR:-default} below is a development-only default. Set real values in infra/docker/.env for a demo host.
+
+x-migration-password: &migration-password ${POSTGRES_MIGRATION_PASSWORD:-migration_dev_password}
+x-node-password: &node-password ${NODE_RUNTIME_PASSWORD:-node_dev_password}
+x-rag-password: &rag-password ${RAG_RUNTIME_PASSWORD:-rag_dev_password}
+x-rag-token-secret: &rag-token-secret ${RAG_SERVICE_TOKEN_SECRET:-dev-only-rag-service-token-secret-change-me}
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: ipsakti
       POSTGRES_USER: migration_owner
-      POSTGRES_PASSWORD: ${POSTGRES_MIGRATION_PASSWORD:-migration_dev_password}
+      POSTGRES_PASSWORD: *migration-password
     ports:
-      - "127.0.0.1:5432:5432"
+      # Bound to localhost only, for psql and local tooling. Never publish on a public interface.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,22 +30,48 @@ services:
     networks:
       - backend
 
-  api-node:
-    build:
-      context: ../../apps/api-node
+  # One-shot: extensions, schemas, runtime roles, audit schema and default grants.
+  db-platform:
+    image: pgvector/pgvector:pg16
+    entrypoint: ["sh", "/platform/run.sh"]
     environment:
-      NODE_ENV: development
-      PORT: 3000
-      RAG_BASE_URL: http://rag-fastapi:8000
-      RAG_SERVICE_TOKEN: ${RAG_SERVICE_TOKEN:-local-development-token-change-me}
-      NODE_DATABASE_URL: postgresql://node_runtime:node_dev_password@postgres:5432/ipsakti
-    ports:
-      - "127.0.0.1:3000:3000"
+      PGHOST: postgres
+      PGDATABASE: ipsakti
+      PGUSER: migration_owner
+      PGPASSWORD: *migration-password
+      NODE_RUNTIME_PASSWORD: *node-password
+      RAG_RUNTIME_PASSWORD: *rag-password
+    volumes:
+      - ../migrations/platform:/platform:ro
     depends_on:
       postgres:
         condition: service_healthy
-      rag-fastapi:
-        condition: service_started
+    networks:
+      - backend
+
+  # One-shot: rag schema (Alembic). Runs before app migrations because app tables reference rag tables.
+  rag-migrate:
+    build:
+      context: ../../services/rag-fastapi
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      RAG_MIGRATION_DATABASE_URL: postgresql://migration_owner:${POSTGRES_MIGRATION_PASSWORD:-migration_dev_password}@postgres:5432/ipsakti
+    depends_on:
+      db-platform:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # One-shot: app schema (Knex, plain SQL files).
+  api-migrate:
+    build:
+      context: ../../apps/api-node
+    command: ["node", "dist/db/migrate.js"]
+    environment:
+      NODE_MIGRATION_DATABASE_URL: postgresql://migration_owner:${POSTGRES_MIGRATION_PASSWORD:-migration_dev_password}@postgres:5432/ipsakti
+    depends_on:
+      rag-migrate:
+        condition: service_completed_successfully
     networks:
       - backend
 
@@ -42,15 +79,58 @@ services:
     build:
       context: ../../services/rag-fastapi
     environment:
-      RAG_ENV: development
-      PORT: 8000
-      RAG_SERVICE_TOKEN: ${RAG_SERVICE_TOKEN:-local-development-token-change-me}
-      RAG_DATABASE_URL: postgresql://rag_runtime:rag_dev_password@postgres:5432/ipsakti
-    depends_on:
-      postgres:
-        condition: service_healthy
+      RAG_ENV: ${RAG_ENV:-development}
+      RAG_DATABASE_URL: postgresql://rag_runtime:${RAG_RUNTIME_PASSWORD:-rag_dev_password}@postgres:5432/ipsakti
+      RAG_SERVICE_TOKEN_SECRET: *rag-token-secret
+    # No published ports: FastAPI is reachable only from the backend network.
     volumes:
       - ../../data:/workspace/data
+    depends_on:
+      rag-migrate:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  api-node:
+    build:
+      context: ../../apps/api-node
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      NODE_DATABASE_URL: postgresql://node_runtime:${NODE_RUNTIME_PASSWORD:-node_dev_password}@postgres:5432/ipsakti
+      RAG_SERVICE_URL: http://rag-fastapi:8000
+      RAG_SERVICE_TOKEN_SECRET: *rag-token-secret
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-only-jwt-access-secret-change-me-please}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:5173}
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-3000}:3000"
+    depends_on:
+      api-migrate:
+        condition: service_completed_successfully
+      rag-fastapi:
+        condition: service_healthy
+    networks:
+      - backend
+
+  # Opt-in, one-shot: fetch+parse a manifest, then embed and load it into rag.chunk_embeddings.
+  # Not part of the default `up`: run explicitly, e.g.
+  #   docker compose -f infra/docker/docker-compose.yml run --rm corpus-loader \
+  #     sh -c "ipsakti-ingest --manifest /workspace/data/manifests/india-patent-mvp.yaml --data-root /workspace/data \
+  #            && ipsakti-load-corpus --processed-dir /workspace/data/processed/<corpus-name> --activate"
+  corpus-loader:
+    build:
+      context: ../../services/rag-fastapi
+    profiles: ["ingest"]
+    environment:
+      RAG_DATABASE_URL: postgresql://rag_runtime:${RAG_RUNTIME_PASSWORD:-rag_dev_password}@postgres:5432/ipsakti
+      RAG_SERVICE_TOKEN_SECRET: *rag-token-secret
+    volumes:
+      - ../../data:/workspace/data
+    working_dir: /workspace
+    depends_on:
+      rag-migrate:
+        condition: service_completed_successfully
     networks:
       - backend
 

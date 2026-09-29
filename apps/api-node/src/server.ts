@@ -1,19 +1,40 @@
+import knex from "knex";
+import { pino } from "pino";
 import { buildApp } from "./app.js";
-import { config } from "./config/env.js";
+import { loadConfig } from "./config/env.js";
+import { createPostgresRepositories } from "./infrastructure/postgres/repositories.js";
+import { HttpRagClient } from "./infrastructure/rag-http/rag-client.js";
 
-const app = buildApp();
+const config = loadConfig();
+const logger = pino({ level: config.logLevel });
+
+const db = knex({
+  client: "pg",
+  connection: config.databaseUrl,
+  pool: { min: 0, max: 10 },
+  acquireConnectionTimeout: 5_000,
+});
+
+const app = buildApp({
+  logger,
+  repositories: createPostgresRepositories(db),
+  rag: new HttpRagClient(config.rag),
+  auth: config.auth,
+  publicOrigins: config.publicOrigins,
+});
 
 const server = app.listen(config.port, config.host, () => {
-  console.log(`Node API listening on ${config.host}:${config.port}`);
+  logger.info(`Node API listening on ${config.host}:${config.port}`);
 });
 
 function shutdown(signal: string): void {
-  console.log(`${signal} received; closing Node API`);
+  logger.info(`${signal} received; closing Node API`);
   server.close((error) => {
     if (error) {
-      console.error("Failed to close Node API cleanly", error);
+      logger.error({ err: error }, "Failed to close Node API cleanly");
       process.exitCode = 1;
     }
+    void db.destroy();
   });
 }
 
