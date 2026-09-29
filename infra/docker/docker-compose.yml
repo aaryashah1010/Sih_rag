@@ -49,6 +49,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ../../data:/workspace/data
     networks:
       - backend
 

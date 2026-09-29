@@ -1,0 +1,28 @@
+corpus_version: india-patent-mvp-2026-09-28-v1
+documents:
+  - source_key: ipindia_patents_act_1970
+    title: Patents Act, 1970
+    authority: Office of the Controller General of Patents, Designs and Trade Marks
+    url: https://ipindia.gov.in/storage/uploads/docs-operator/73b5bf10-b04e-4f45-abef-87ff117315dc.pdf
+    jurisdiction: INDIA
+    legal_domain: PATENT
+    source_type: LAW
+    expected_content_type: application/pdf
+    language: en
+    indexed_language: en
+    allowed_scripts: [LATIN]
+    review_status: needs_currency_review
+    notes: "IP India consolidated e-version incorporating amendments till 01-08-2024. Verify later Gazette changes before activating this corpus for answers. Source listing: https://ipindia.gov.in/resource/patents-resources-act"
+  - source_key: ipindia_patents_second_amendment_rules_2024
+    title: Patents (Second Amendment) Rules, 2024
+    authority: Office of the Controller General of Patents, Designs and Trade Marks / Gazette of India
+    url: https://ipindia.gov.in/frontend/pdf/patents/rules/Patent_second_amendment_rules_2024.pdf
+    jurisdiction: INDIA
+    legal_domain: PATENT
+    source_type: RULE
+    expected_content_type: application/pdf
+    language: en-hi
+    indexed_language: en
+    allowed_scripts: [LATIN]
+    review_status: needs_currency_review
+    notes: Gazette amendment published 16 March 2024; review alongside the consolidated Rules and later notifications.
