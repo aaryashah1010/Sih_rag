@@ -1,0 +1,18 @@
+{
+  "retrieval_run_id": null,
+  "corpus_version_id": null,
+  "decision": "ABSTAIN",
+  "answer": "The available evidence is insufficient to answer safely.",
+  "confidence": null,
+  "model": {
+    "name": "none"
+  },
+  "policy_version": "sha256:example-policy-version",
+  "claims": [],
+  "citations": [],
+  "missing_information": ["product composition"],
+  "timings_ms": {
+    "classification": 18,
+    "retrieval": 120
+  }
+}

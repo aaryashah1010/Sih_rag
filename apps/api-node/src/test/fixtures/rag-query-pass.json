@@ -1,0 +1,42 @@
+{
+  "retrieval_run_id": "f2bc5a7a-573a-4c02-b4c6-c31d570f9fd2",
+  "corpus_version_id": "ee98d0a0-a206-4dd5-8cea-77ac8d0c6d3f",
+  "decision": "PASS",
+  "answer": "Based on the retrieved source, the claimed subject matter may be excluded from patentability.",
+  "confidence": 0.91,
+  "model": {
+    "name": "local-model",
+    "version": "v1"
+  },
+  "policy_version": "sha256:example-policy-version",
+  "claims": [
+    {
+      "claim_index": 0,
+      "claim_text": "The source describes an exclusion for traditional knowledge.",
+      "support_status": "SUPPORTED",
+      "verifier_score": 0.92,
+      "citation_labels": ["EV-01"]
+    }
+  ],
+  "citations": [
+    {
+      "label": "EV-01",
+      "chunk_id": "2dbec7d1-117c-4c36-a8f7-195436f9d83b",
+      "authority": "IP India",
+      "document_title": "Patents Act, 1970",
+      "locator": "Section 3(p)",
+      "quoted_span": "...traditional knowledge...",
+      "source_url": "https://example.gov.in/source",
+      "page_start": 12,
+      "page_end": 13
+    }
+  ],
+  "missing_information": [],
+  "timings_ms": {
+    "classification": 25,
+    "retrieval": 180,
+    "reranking": 95,
+    "generation": 2100,
+    "verification": 330
+  }
+}

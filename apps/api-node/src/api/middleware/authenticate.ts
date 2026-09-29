@@ -1,7 +1,9 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import type { AuthService } from "../../application/auth.service.js";
 import { forbidden, unauthorized } from "../../domain/errors.js";
-import type { AuthContext, Role } from "../../domain/types.js";
+import type { AuthContext } from "../../domain/types.js";
+
+export type AuthorizationRole = "USER" | "EXPERT" | "ADMIN";
 
 export function authenticate(auth: AuthService): RequestHandler {
   return (request: Request, response: Response, next: NextFunction) => {
@@ -14,9 +16,10 @@ export function authenticate(auth: AuthService): RequestHandler {
   };
 }
 
-export function requireRole(...roles: Role[]): RequestHandler {
+export function requireRole(...roles: AuthorizationRole[]): RequestHandler {
   return (_request, response, next) => {
-    if (!roles.includes(authContext(response).role)) throw forbidden("This action requires a different role.");
+    const role = authContext(response).role;
+    if (!roles.some((allowedRole) => allowedRole === role)) throw forbidden("This action requires a different role.");
     next();
   };
 }

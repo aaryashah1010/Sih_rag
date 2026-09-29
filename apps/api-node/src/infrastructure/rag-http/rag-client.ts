@@ -1,7 +1,11 @@
 import jwt from "jsonwebtoken";
 import { AppError } from "../../domain/errors.js";
 import {
+  evidenceSearchRequestSchema,
+  evidenceSearchResponseSchema,
   ragQueryResponseSchema,
+  type EvidenceSearchRequest,
+  type EvidenceSearchResponse,
   type RagCaller,
   type RagClient,
   type RagQueryRequest,
@@ -69,6 +73,52 @@ export class HttpRagClient implements RagClient {
         "No answer was generated because the evidence service returned an invalid response.");
     }
     return parsed.data;
+  }
+
+  async searchEvidence(request: EvidenceSearchRequest, caller: RagCaller): Promise<EvidenceSearchResponse> {
+    const parsedRequest = evidenceSearchRequestSchema.safeParse(request);
+    if (!parsedRequest.success) {
+      throw new AppError(400, "RAG_REQUEST_INVALID", "Invalid evidence search request", "The evidence search request is invalid.");
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(new URL("/internal/v1/evidence/search", this.options.baseUrl), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${this.serviceToken(caller)}`,
+          "x-request-id": caller.requestId,
+        },
+        body: JSON.stringify(parsedRequest.data),
+        signal: AbortSignal.timeout(this.options.timeoutMs),
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "TimeoutError") {
+        throw new AppError(504, "RAG_TIMEOUT", "Evidence service timed out",
+          "No evidence was returned because the evidence service did not respond in time.");
+      }
+      throw new AppError(503, "RAG_SERVICE_UNAVAILABLE", "Evidence service unavailable",
+        "No evidence was returned because the evidence service is unreachable.");
+    }
+
+    const body: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      const code = (body as { code?: unknown } | null)?.code;
+      if (response.status === 503 && typeof code === "string" && PASS_THROUGH_CODES.has(code)) {
+        throw new AppError(503, code, "Evidence service unavailable",
+          "No evidence was returned because the evidence corpus is unavailable.");
+      }
+      throw new AppError(502, "RAG_BAD_RESPONSE", "Evidence service error",
+        "No evidence was returned because the evidence service returned an error.");
+    }
+
+    const parsedResponse = evidenceSearchResponseSchema.safeParse(body);
+    if (!parsedResponse.success) {
+      throw new AppError(502, "RAG_BAD_RESPONSE", "Evidence service error",
+        "No evidence was returned because the evidence service returned an invalid response.");
+    }
+    return parsedResponse.data;
   }
 
   async ready(): Promise<{ ok: boolean; activeCorpus: string | null }> {

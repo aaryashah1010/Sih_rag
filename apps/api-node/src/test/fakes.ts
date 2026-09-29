@@ -3,7 +3,7 @@ import { pino } from "pino";
 import { buildApp } from "../app.js";
 import { conflict } from "../domain/errors.js";
 import type { ChatSession, Message, User } from "../domain/types.js";
-import type { RagClient, RagQueryResponse } from "../ports/rag-client.js";
+import type { EvidenceSearchRequest, EvidenceSearchResponse, RagCaller, RagClient, RagQueryResponse } from "../ports/rag-client.js";
 import type { RefreshTokenRecord, Repositories, StoredAnswer } from "../ports/repositories.js";
 
 /** In-memory repositories that honour the same contracts as the Postgres implementation. */
@@ -140,16 +140,26 @@ export const abstainResponse: RagQueryResponse = {
   timings_ms: {},
 };
 
-export function fakeRag(handler: () => Promise<RagQueryResponse>) {
+export function fakeRag(
+  handler: () => Promise<RagQueryResponse>,
+  evidenceHandler: (request: EvidenceSearchRequest, caller: RagCaller) => Promise<EvidenceSearchResponse> = async () => ({
+    corpus_version_id: randomUUID(), results: [],
+  }),
+) {
   const calls: unknown[] = [];
+  const evidenceCalls: Array<{ request: EvidenceSearchRequest; caller: RagCaller }> = [];
   const rag: RagClient = {
     async query(request) {
       calls.push(request);
       return handler();
     },
+    async searchEvidence(request, caller) {
+      evidenceCalls.push({ request, caller });
+      return evidenceHandler(request, caller);
+    },
     ready: async () => ({ ok: true, activeCorpus: null }),
   };
-  return { rag, calls };
+  return { rag, calls, evidenceCalls };
 }
 
 export const TEST_AUTH = {

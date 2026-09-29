@@ -3,7 +3,7 @@
 Tracks what actually exists in the repo against the plan in `19-IMPLEMENTATION-BACKLOG.md`.
 Update this file, not the blueprint docs, as features land.
 
-Last updated: 2026-09-29.
+Last updated: 2026-09-30.
 
 ## Done
 
@@ -104,6 +104,16 @@ Last updated: 2026-09-29.
 - 9 new pytest tests (`test_evidence_search.py`, `test_evidence_api.py`) against fakes.
 - **Not yet run against live Postgres** — same caveat as P1.5: logic is tested against
   fakes only so far.
+
+**Step 1 public evidence search API**
+- `POST /api/v1/evidence/search` authenticates requests, allows `USER`/`EXPERT`/`ADMIN`,
+  applies a per-user limit of 20 requests per minute, validates the strict API request,
+  and calls the application evidence-search service through `RagClient.searchEvidence()`.
+- Successful responses return the structured corpus version and ranked evidence results;
+  validation and authorization errors use RFC 9457 Problem Details, and RAG outages/timeouts
+  remain distinct `503`/`504` errors.
+- Eight endpoint tests cover success, validation, authentication, role rejection, rate limiting,
+  RAG outage, timeout, and response contract. The full Node suite passes (31 tests).
 
 ## Verified end-to-end (this session)
 
