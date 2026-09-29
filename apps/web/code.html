@@ -1,0 +1,1501 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP-SAKTI Sahayak | Legal &amp; Regulatory Workbench</title>
+  <!-- Google Fonts: IBM Plex Sans & Newsreader -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400;1,6..72,600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src.css">
+</head>
+<body class="bg-[#F4F6F8] text-[#1E293B] font-sans antialiased h-screen min-h-0 overflow-hidden flex flex-col selection:bg-teal-100 selection:text-teal-900">
+
+  <!-- TOP APP SWITCHER / PROTOTYPE CONTROLLER BAR -->
+  <header id="prototype-controls" class="hidden bg-[#0B1513] text-[#E2E8F0] border-b border-teal-900/60 px-4 py-2.5 flex flex-wrap items-center justify-between flex-shrink-0 text-xs sticky top-0 z-50 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded bg-[#136154] text-emerald-300 font-bold text-xs tracking-wider">IP</span>
+        <span class="font-semibold text-white tracking-tight text-sm">IP-SAKTI Sahayak</span>
+        <span class="bg-teal-950 text-emerald-400 border border-teal-700/60 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider">v0.9.4 Prototype</span>
+      </div>
+      <div class="hidden md:flex items-center gap-1.5 pl-3 border-l border-slate-700/60 text-slate-300">
+        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        <span class="">API target: <code class="font-mono text-amber-300 text-[11px]">/api/v1</code></span>
+        <span class="text-slate-500">|</span>
+          <span class="text-amber-300/90 font-mono text-[11px]">No active evidence corpus</span>
+      </div>
+    </div>
+
+    <!-- Active State Switcher for Evaluator -->
+    <div class="flex items-center gap-2 overflow-x-auto py-1 max-w-full">
+      <span class="text-slate-400 font-medium uppercase text-[10px] tracking-wider whitespace-nowrap">View Scenario:</span>
+      <div class="inline-flex bg-slate-900 p-0.5 rounded border border-slate-700"><button onclick="switchScenario('new')" id="btn-scen-new" class="px-2.5 py-1 rounded text-[11px] font-medium transition text-white bg-[#0F4C42] shadow-sm">1. New Chat</button>
+<button onclick="switchScenario('active')" id="btn-scen-active" class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white transition">2. Active + Drawer</button>
+<button onclick="switchScenario('caution')" id="btn-scen-caution" class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white transition">3. Progressive Q</button>
+<button onclick="switchScenario('pass-caution')" id="btn-scen-pass-caution" class="px-2.5 py-1 rounded text-[11px] font-medium text-amber-300 hover:text-amber-100 transition">4. Pass w/ Caution</button>
+<button onclick="switchScenario('abstain')" id="btn-scen-abstain" class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white transition">5. Abstain / TKDL</button>
+<button onclick="switchScenario('escalate')" id="btn-scen-escalate" class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white transition">6. Escalate Consent</button>
+<button onclick="switchScenario('escalation-confirmed')" id="btn-scen-escalation-confirmed" class="px-2.5 py-1 rounded text-[11px] font-medium text-emerald-300 hover:text-emerald-100 transition">7. Confirmed Escalation</button>
+<button onclick="switchScenario('unavailable')" id="btn-scen-unavailable" class="px-2.5 py-1 rounded text-[11px] font-medium text-rose-300 hover:text-rose-100 transition">8. Corpus Fail-Closed</button>
+<button onclick="switchScenario('auth-login')" id="btn-scen-auth-login" class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white transition">9. Sign In</button>
+<button onclick="switchScenario('auth-register')" id="btn-scen-auth-register" class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white transition">10. Register</button>
+<button onclick="switchScenario('components')" id="btn-scen-components" class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-300 hover:text-white transition">11. State Matrix</button></div>
+
+      <!-- Device View Toggle -->
+      <div class="hidden lg:flex items-center bg-slate-900 border border-slate-700 rounded p-0.5 ml-2">
+        <button onclick="toggleDevice('desktop')" id="btn-view-desktop" class="p-1 px-2 text-[10px] uppercase font-bold text-white bg-slate-700 rounded">Desktop (1440)</button>
+        <button onclick="toggleDevice('mobile')" id="btn-view-mobile" class="p-1 px-2 text-[10px] uppercase font-bold text-slate-400 hover:text-white rounded">Mobile (390)</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CANVAS WRAPPER (RESPONSIVE CONTAINER) -->
+  <div id="canvas-container" class="flex-1 min-h-0 flex justify-center bg-[#ECEFF2] p-0 md:p-3 overflow-hidden transition-all duration-300">
+    <div id="viewport-frame" class="w-full max-w-[1536px] h-full min-h-0 bg-white md:rounded-lg md:border md:border-slate-300/80 shadow-lg flex flex-col overflow-hidden transition-all duration-300">
+
+      <!-- ========================================================================= -->
+      <!-- TOP WORKBENCH GLOBAL HEADER -->
+      <!-- ========================================================================= -->
+      <nav aria-label="Workbench Header" class="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between flex-shrink-0 z-30">
+        <!-- Left: Brand & Mobile Menu Button -->
+        <div class="flex items-center gap-3">
+          <button id="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" class="md:hidden p-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-100 focus:outline-none" aria-label="Toggle navigation menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          
+          <button type="button" aria-label="IP-SAKTI Sahayak home" onclick="switchScenario('new')" class="flex items-center gap-2.5 border-0 bg-transparent p-0 text-left">
+            <div class="w-8 h-8 rounded bg-[#0F4C42] flex items-center justify-center text-white font-bold text-sm shadow-sm ring-1 ring-teal-700/20">
+              <svg class="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 leading-none">
+                <span class="font-bold text-slate-900 tracking-tight text-base font-sans">IP-SAKTI Sahayak</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 bg-teal-50 text-[#0F4C42] font-semibold border border-teal-200/80 rounded">RESEARCH</span>
+              </div>
+              <p class="text-[11px] text-slate-500 font-sans mt-0.5 hidden sm:block">Ayurveda IP &amp; Regulatory Evidence Workbench</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Center: Statutory & Jurisdiction Routing Switcher -->
+        <div class="flex items-center gap-3">
+          <!-- Segmented Jurisdiction Control -->
+          <fieldset class="flex items-center bg-slate-100 p-0.5 rounded border border-slate-200">
+            <legend class="sr-only">Jurisdiction selector</legend>
+            <button id="jur-in" onclick="setJurisdiction('IN')" class="px-2.5 py-1 text-xs font-semibold rounded transition text-[#0F4C42] bg-white shadow-sm border border-slate-200/60 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+              <span class="">India Primary</span>
+              <span class="text-[10px] text-slate-400 font-normal hidden lg:inline">(Patents, D&amp;C, TKDL, ABS)</span>
+            </button>
+            <button id="jur-intl" onclick="setJurisdiction('INTL')" class="px-2.5 py-1 text-xs font-medium rounded transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+              <span class="">International</span>
+              <span class="text-[10px] text-slate-400 font-normal hidden lg:inline">(WIPO / CBD / US-EU)</span>
+            </button>
+          </fieldset>
+
+          <!-- Language Selector with visible Indian Names -->
+          <div class="relative">
+            <label for="lang-select" class="sr-only">Interface &amp; Guidance Language</label>
+            <div class="flex items-center bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs text-slate-700 hover:border-slate-300">
+              <svg class="w-3.5 h-3.5 text-slate-400 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+              <select id="lang-select" class="bg-transparent text-xs font-medium text-slate-800 focus:outline-none cursor-pointer pr-1">
+                <option value="en" selected="">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                  <option value="gu">ગુજરાતી (Gujarati)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Evidence Drawer Quick Toggle & Profile -->
+        <div class="flex items-center gap-2">
+          <!-- Voice Feature Flag Pill (Clearly Inactive / Permitted only with audio consent) -->
+          <div class="hidden xl:flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px]" title="Voice input is feature-flagged. Requires explicit microphone consent and legal transcript confirmation before processing.">
+            <svg class="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"></path></svg>
+            <span class="font-mono text-[10px] uppercase font-semibold">Voice: Flagged Off</span>
+          </div>
+
+          <!-- Quick Drawer Toggle (Desktop) -->
+          <button id="global-drawer-btn" onclick="toggleEvidenceDrawer()" class="px-2.5 py-1 text-xs border border-slate-200 rounded font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 flex items-center gap-1.5 focus:ring-1 focus:ring-teal-600" title="Toggle Evidence &amp; Statutory Sources Drawer">
+            <svg class="w-3.5 h-3.5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="hidden sm:inline">Evidence Drawer</span>
+            <span id="citation-count-badge" class="bg-[#0F4C42] text-white text-[10px] font-mono px-1.5 py-0.2 rounded-full">0</span>
+          </button>
+
+          <!-- User Profile / Session Menu -->
+          <div class="relative">
+            <button onclick="toggleUserDropdown()" class="flex items-center gap-2 p-1 rounded hover:bg-slate-100 focus:outline-none border border-transparent hover:border-slate-200" aria-label="User account menu" aria-haspopup="true">
+              <div id="profile-avatar" class="w-7 h-7 rounded-full bg-[#0F4C42] text-white flex items-center justify-center text-xs font-semibold">
+                G
+              </div>
+              <div class="text-left hidden lg:block leading-tight">
+                  <span id="profile-name" class="block text-xs font-medium text-slate-800">Guest researcher</span>
+                  <span id="profile-email" class="block text-[10px] text-slate-500">Sign in to use the API</span>
+              </div>
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded shadow-lg py-1.5 z-50 text-xs text-slate-700">
+              <div class="px-3 py-2 border-b border-slate-100">
+                  <p id="menu-profile-name" class="font-semibold text-slate-900">Guest researcher</p>
+                  <p id="menu-profile-email" class="text-slate-500 text-[11px] truncate">Not signed in</p>
+              </div>
+              <button id="profile-auth-action" type="button" onclick="switchScenario('auth-login')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span>Sign in</span>
+              </button>
+              <div class="border-t border-slate-100 my-1"></div>
+              <div class="px-3 py-1 text-[10px] text-slate-400">
+                  Session data is stored only after sign-in.
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ========================================================================= -->
+      <!-- WORKBENCH BODY: 3-PANE RESILIENT ARCHITECTURE -->
+      <!-- [Sidebar (Navigation & History)] | [Chat & Composer] | [Evidence Drawer] -->
+      <!-- ========================================================================= -->
+      <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- ===================================================================== -->
+        <!-- LEFT SIDEBAR: SESSIONS, QUICK FILTERS, & STATUTORY SCOPE -->
+        <!-- ===================================================================== -->
+        <aside id="app-sidebar" aria-label="Saved conversations and route topics" class="w-64 flex-shrink-0 bg-[#FBFDFD] border-r border-slate-200 flex flex-col justify-between hidden md:flex transition-all duration-200 z-20">
+          <!-- Top: Primary Action & Session Groups -->
+          <div class="p-3 flex flex-col h-full overflow-y-auto">
+            <button onclick="switchScenario('new')" class="w-full py-2 px-3 bg-[#0F4C42] hover:bg-[#0A3730] text-white text-xs font-semibold rounded flex items-center justify-between shadow-sm transition">
+              <span class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span class="">New Conversation</span>
+              </span>
+              <kbd class="text-[10px] font-mono bg-teal-900/60 px-1.5 py-0.5 rounded text-teal-200 border border-teal-700/50">⌘K</kbd>
+            </button>
+
+            <!-- Route Quick Filter Filters -->
+            <div class="mt-4">
+              <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 px-1">
+                <span class="">Saved conversations</span>
+                <span id="session-count" class="text-[10px] font-mono text-slate-400">0</span>
+              </div>
+              <ul id="session-list" class="space-y-1 text-xs">
+                <li id="session-empty-state" class="rounded px-2.5 py-2 text-[11px] leading-relaxed text-slate-500">Sign in to load your saved conversations.</li>
+                <li class="sample-history-item">
+                  <button onclick="switchScenario('active')" class="w-full text-left px-2.5 py-2 rounded bg-teal-50/80 border border-teal-200/70 text-slate-900 font-medium group transition">
+                    <div class="flex items-center justify-between">
+                      <span class="truncate font-semibold text-slate-900">Curcumin + Piperine Nano-Liposome</span>
+                      <span class="text-[9px] font-mono bg-emerald-100 text-emerald-800 px-1 rounded">PASS</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
+                      <span class="font-mono text-teal-800">Patent Sec 3(p)</span>
+                      <span class="">•</span>
+                      <span class="">12m ago</span>
+                    </div>
+                  </button>
+                </li>
+                <li class="sample-history-item">
+                  <button onclick="switchScenario('caution')" class="w-full text-left px-2.5 py-2 rounded hover:bg-slate-100 text-slate-700 transition">
+                    <div class="flex items-center justify-between">
+                      <span class="truncate">Triphala Hydrogel Cosmetic Route</span>
+                      <span class="text-[9px] font-mono bg-amber-100 text-amber-800 px-1 rounded">CAUTION</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
+                      <span class="">D&amp;C Act Schedule P</span>
+                      <span class="">•</span>
+                      <span class="">2h ago</span>
+                    </div>
+                  </button>
+                </li>
+                <li class="sample-history-item">
+                  <button onclick="switchScenario('abstain')" class="w-full text-left px-2.5 py-2 rounded hover:bg-slate-100 text-slate-700 transition">
+                    <div class="flex items-center justify-between">
+                      <span class="truncate">Kashaya Formulation Novel Claim</span>
+                      <span class="text-[9px] font-mono bg-slate-200 text-slate-700 px-1 rounded">ABSTAIN</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
+                      <span class="">TKDL / Sec 3(e)</span>
+                      <span class="">•</span>
+                      <span class="">Yesterday</span>
+                    </div>
+                  </button>
+                </li>
+                <li class="sample-history-item">
+                  <button onclick="switchScenario('escalate')" class="w-full text-left px-2.5 py-2 rounded hover:bg-slate-100 text-slate-700 transition">
+                    <div class="flex items-center justify-between">
+                      <span class="truncate">Red Sanders (Raktachandana) Export ABS</span>
+                      <span class="text-[9px] font-mono bg-rose-100 text-rose-800 px-1 rounded">ESCALATE</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
+                      <span class="">Biodiversity Act Sec 3</span>
+                      <span class="">•</span>
+                      <span class="">3d ago</span>
+                    </div>
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Candidate Routing Category Taxonomy Reference -->
+            <div class="mt-5 pt-3 border-t border-slate-200 text-xs">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-1">Candidate Routing Paths</span>
+              <div class="space-y-1.5 text-[11px] text-slate-600 px-1">
+                <div class="flex items-center justify-between hover:text-slate-900 cursor-help" title="Ayurveda, Siddha, Unani classic text references under 1st Schedule">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                    <span class="">Classical / Generic Medicine</span>
+                  </span>
+                  <span class="font-mono text-[10px] text-slate-400">D&amp;C 3(a)</span>
+                </div>
+                <div class="flex items-center justify-between hover:text-slate-900 cursor-help" title="Proprietary formulations containing ingredients mentioned in recognized texts">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                    <span class="">Patent / Proprietary Drug</span>
+                  </span>
+                  <span class="font-mono text-[10px] text-slate-400">D&amp;C 3(h)</span>
+                </div>
+                <div class="flex items-center justify-between hover:text-slate-900 cursor-help" title="Food safety standards for Ayurveda Aahara (FSSAI 2022)">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                    <span class="">Ayurveda Aahara / Nutra</span>
+                  </span>
+                  <span class="font-mono text-[10px] text-slate-400">FSSAI 2022</span>
+                </div>
+                <div class="flex items-center justify-between hover:text-slate-900 cursor-help" title="Purified fraction or extract of minimum 4 bioactive markers">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                    <span class="">Phytopharmaceutical Drug</span>
+                  </span>
+                  <span class="font-mono text-[10px] text-slate-400">Rule 122E</span>
+                </div>
+                <div class="flex items-center justify-between hover:text-slate-900 cursor-help" title="Access &amp; Benefit Sharing permissions for foreign entities or commercial utilization">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                    <span class="">Biodiversity ABS Approval</span>
+                  </span>
+                  <span class="font-mono text-[10px] text-slate-400">NBA Form I/III</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Legal Disclaimer & System Boundary Note -->
+          <div class="p-3 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-500 leading-normal">
+            <div class="flex items-start gap-1.5 mb-1.5 text-slate-600 font-medium">
+              <svg class="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span class="">Regulatory Boundary</span>
+            </div>
+            <p class="">Informational routing aid only. Not legal advice, medical counsel, or a patent filing. TKDL access is non-public; direct pointers provided.</p>
+            <div class="mt-2 pt-2 border-t border-slate-200/70 flex items-center justify-between text-[10px]">
+              <span class="text-slate-400">Evidence corpus: not loaded</span>
+              <button type="button" onclick="switchScenario('unavailable')" class="text-teal-700 hover:underline">API Status</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- ===================================================================== -->
+        <!-- CENTER COLUMN: CONVERSATION WORKBENCH (MAX-W: 760px CENTERED) -->
+        <!-- ===================================================================== -->
+        <main class="flex-1 flex flex-col bg-white overflow-hidden relative" id="chat-column">
+          
+          <!-- Persistent Disclaimer Banner (Always Visible on Top of Conversation) -->
+          <div class="bg-[#FFFBF2] border-b border-[#F5E6C4] px-4 py-2 text-xs flex items-center justify-between text-[#784A04] flex-shrink-0">
+            <div class="flex items-center gap-2 max-w-3xl">
+              <span class="px-1.5 py-0.5 bg-[#F5E6C4] text-[#603B04] rounded text-[10px] font-mono font-bold tracking-wide flex-shrink-0">DISCLAIMER</span>
+              <p class="text-[11px] leading-snug">
+                <strong>Informational research guidance only.</strong> Not formal legal advice, clinical diagnosis, or a binding determination. Classification is an aid to determine candidate regulatory routes.
+              </p>
+            </div>
+                <span class="text-[10px] font-mono text-[#8F5908] hidden sm:inline">Guidance only · evidence availability depends on the service</span>
+          </div>
+
+          <output id="fixture-warning" class="hidden bg-amber-50 border-b border-amber-200 px-4 py-2 text-[11px] text-amber-950" aria-live="polite">
+            <strong>Illustrative prototype state.</strong> Sample answers, citations, registry details, and case data are not verified and have not been submitted to a service.
+          </output>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 1: NEW CONVERSATION (Compact Useful Workspace, No Hero) -->
+          <!-- =================================================================== -->
+          <div id="scenario-new" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-[760px] w-full mx-auto">
+            <!-- Compact Purpose Header -->
+            <div class="pt-2 pb-1 border-b border-slate-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#0F4C42]"></span>
+                <h1 class="text-lg font-bold text-slate-900 font-sans tracking-tight">Ayurveda Intellectual Property &amp; Regulatory Assistant</h1>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Analyze candidate protection strategies across Indian Patents Act (Sections 3(p), 3(e), 3(d)), Traditional Knowledge Digital Library (TKDL) pointers, D&amp;C Act drug classifications, FSSAI Ayurveda Aahara standards, and Biological Diversity Act Access &amp; Benefit Sharing (ABS).
+              </p>
+            </div>
+
+            <!-- Quick Start: Common Statutory Question Templates -->
+            <div>
+              <p class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2.5">
+                Suggested Research &amp; Classification Prompts
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <!-- Prompt 1 -->
+                <button onclick="loadQuestion('patent-nano')" class="text-left p-3 rounded border border-slate-200 bg-[#F9FBFA] hover:bg-teal-50/60 hover:border-teal-300 transition text-xs group">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-semibold text-slate-900 group-hover:text-[#0F4C42]">Curcumin + Bio-enhancer Patentability</span>
+                    <span class="text-[9px] font-mono text-teal-800 bg-teal-100/80 px-1 rounded">Sec 3(p)</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 line-clamp-2">"Can we patent a novel nano-emulsion of Curcuma longa and Piperine for enhanced bioavailability?"</p>
+                </button>
+
+                <!-- Prompt 2 -->
+                <button onclick="loadQuestion('ayurveda-aahara')" class="text-left p-3 rounded border border-slate-200 bg-[#F9FBFA] hover:bg-teal-50/60 hover:border-teal-300 transition text-xs group">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-semibold text-slate-900 group-hover:text-[#0F4C42]">Ayurveda Aahara vs. Proprietary Drug</span>
+                    <span class="text-[9px] font-mono text-amber-800 bg-amber-100/80 px-1 rounded">FSSAI 2022</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 line-clamp-2">"We are launching an Ashwagandha fortified energy drink. Do we need an AYUSH manufacturing license or FSSAI approval?"</p>
+                </button>
+
+                <!-- Prompt 3 -->
+                <button onclick="loadQuestion('biodiversity-abs')" class="text-left p-3 rounded border border-slate-200 bg-[#F9FBFA] hover:bg-teal-50/60 hover:border-teal-300 transition text-xs group">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-semibold text-slate-900 group-hover:text-[#0F4C42]">Biological Diversity ABS Approval</span>
+                    <span class="text-[9px] font-mono text-emerald-800 bg-emerald-100/80 px-1 rounded">NBA Form I</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 line-clamp-2">"We are an Indian entity with 15% foreign angel funding procuring Kutki from Himachal Pradesh. Is NBA Form I required?"</p>
+                </button>
+
+                <!-- Prompt 4 -->
+                <button onclick="loadQuestion('cosmetic-herb')" class="text-left p-3 rounded border border-slate-200 bg-[#F9FBFA] hover:bg-teal-50/60 hover:border-teal-300 transition text-xs group">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-semibold text-slate-900 group-hover:text-[#0F4C42]">Herbal Cosmetic Label Claims</span>
+                    <span class="text-[9px] font-mono text-blue-800 bg-blue-100/80 px-1 rounded">D&amp;C Schedule S</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 line-clamp-2">"Can we market a Kumkumadi face serum with therapeutic anti-aging claims under a cosmetics license?"</p>
+                </button>
+              </div>
+            </div>
+
+            <!-- Statutory Framework Scope Matrix (Compact) -->
+            <div class="bg-slate-50 border border-slate-200 rounded p-3 text-xs">
+              <span class="font-semibold text-slate-800 block mb-1">Relevant Indian source families (not loaded in this build)</span>
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                <span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-700">Patents Act 1970 (Sec 3(p), 3(d), 3(e))</span>
+                <span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-700">TKDL Reference Pointers</span>
+                <span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-700">Drugs &amp; Cosmetics Act 1940 (AYUSH Schedule 1)</span>
+                <span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-700">FSSAI Ayurveda Aahara Regs 2022</span>
+                <span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-700">Biological Diversity Act 2002 (Sec 3, 4, 7)</span>
+                <span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-700">Geographical Indications Act 1999</span>
+                <span class="bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-700">PPV&amp;FR Act 2001 (Medicinal Plants)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 2: ACTIVE CONVERSATION (With Answer, Citations & Next Steps) -->
+          <!-- =================================================================== -->
+          <div id="scenario-active" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-[760px] w-full mx-auto hidden">
+            
+            <!-- User Message Turn -->
+            <div class="flex items-start gap-3 justify-end">
+              <div class="bg-slate-100 border border-slate-200 rounded-lg p-3.5 max-w-[85%] text-xs shadow-sm">
+                <div class="flex items-center justify-between gap-4 mb-1 text-[11px] text-slate-500">
+                  <span class="font-semibold text-slate-700">You (Dr. V. Sharma)</span>
+                  <span class="font-mono text-[10px]">10:42 AM</span>
+                </div>
+                <p class="text-slate-800 leading-relaxed font-sans">
+                  We have developed a dual-encapsulated nano-liposomal formulation combining <em>Curcuma longa</em> (standardized 95% curcuminoids) and <em>Piper nigrum</em> (standardized piperine) that achieves a 14x increase in systemic bioavailability over raw extract in human PK trials. Can we seek an Indian patent, or will Section 3(p) and 3(e) automatically reject this as traditional knowledge?
+                </p>
+                <div class="mt-2 pt-2 border-t border-slate-200 flex items-center gap-2 text-[10px] text-slate-500">
+                  <span class="font-mono bg-slate-200 px-1 rounded text-slate-700">Target Jurisdiction: India Primary</span>
+                  <span class="">•</span>
+                  <span class="">Formulation: Bio-enhanced nano-liposome</span>
+                </div>
+              </div>
+              <div class="w-7 h-7 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                VS
+              </div>
+            </div>
+
+            <!-- Assistant Answer Card (PASS_WITH_CAUTION / CANDIDATE ROUTE) -->
+            <div class="flex items-start gap-3">
+              <div class="w-7 h-7 rounded bg-[#0F4C42] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1 shadow-sm">
+                IP
+              </div>
+
+              <div class="flex-1 border border-slate-200 rounded-lg bg-white shadow-sm overflow-hidden text-xs">
+                
+                <!-- Answer Header: Route Determination & Confidence -->
+                <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <!-- Status Badge: PASS WITH CAUTION -->
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                      ROUTE: CANDIDATE PATENT (HIGH STATUTORY HURDLE)
+                    </span>
+                    <span class="text-slate-400 text-xs">|</span>
+                    <span class="text-slate-600 font-medium">Patents Act §3(p) &amp; §3(e) Examination</span>
+                  </div>
+
+                  <!-- Confidence Score (System confidence score, not legal certainty) -->
+                  <div class="flex items-center gap-1.5 text-[11px] text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200" title="System retrieval confidence based on statutory matches in Patents Act &amp; TKDL Guidelines. Not a guarantee of patent grant.">
+                    <span class="text-slate-400">System Confidence:</span>
+                    <span class="font-mono font-bold text-teal-800">84/100</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                  </div>
+                </div>
+
+                <!-- Answer Content Section -->
+                <div class="p-4 space-y-4">
+                  <!-- Direct Summary -->
+                  <div class="prose prose-xs text-slate-800 leading-relaxed font-sans">
+                    <p class="font-medium text-slate-900 text-[13px]">
+                      Illustrative sample only: this example demonstrates how a cautious, source-cited answer could be presented. It is not a legal assessment and its statements and references have not been verified for this prototype.
+                    </p>
+                  </div>
+
+                  <!-- "Why this route" Analysis Box -->
+                  <div class="bg-teal-50/50 border border-teal-200/80 rounded p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <h4 class="font-bold text-[#0F4C42] text-xs flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-[#0F4C42]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Why this route applies (Statutory Rationale)
+                      </h4>
+                      <span class="text-[10px] text-teal-700 font-mono">IPO Guidelines 2012 §4.2</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] text-slate-700">
+                      <div class="bg-white p-2.5 rounded border border-teal-100">
+                        <strong class="text-slate-900 block mb-0.5">Section 3(p) Overcome via Novel Vehicle:</strong>
+                        While Haridra (Curcuma) and Maricha/Pippali (Piper nigrum) as a bioavailability duo is documented in Charaka Samhita (Samyoga-vishesha), the <em>synthetic lipid nanoparticle matrix and specific PEGylated encapsulation process</em> is not traditional knowledge.
+                      </div>
+                      <div class="bg-white p-2.5 rounded border border-teal-100">
+                        <strong class="text-slate-900 block mb-0.5">Section 3(e) Synergism Standard:</strong>
+                        Under Patent Office Guidelines, an applicant must demonstrate that the combined bio-enhancement is statistically synergistic, not just an additive sum of components. Your 14x PK trial data is crucial evidence.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Citations & Statutory Authorities (Clickable into Evidence Drawer) -->
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Statutory Evidence &amp; Precedents (4 Citations)
+                      </span>
+                      <button type="button" class="text-[10px] text-teal-700 hover:underline" onclick="toggleEvidenceDrawer()">View all in Evidence Drawer →</button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                      <!-- Citation 1 -->
+                      <button onclick="openCitationDetail('cit-1')" class="citation-badge inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-left transition group">
+                        <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                        <span class="font-mono font-medium text-slate-800 text-[11px] group-hover:text-teal-900">Patents Act 1970 § 3(p)</span>
+                        <span class="text-[10px] text-slate-400">| Traditional Knowledge</span>
+                      </button>
+
+                      <!-- Citation 2 -->
+                      <button onclick="openCitationDetail('cit-2')" class="citation-badge inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-left transition group">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                        <span class="font-mono font-medium text-slate-800 text-[11px] group-hover:text-teal-900">Patents Act 1970 § 3(e)</span>
+                        <span class="text-[10px] text-slate-400">| Synergistic Admixture</span>
+                      </button>
+
+                      <!-- Citation 3 -->
+                      <button onclick="openCitationDetail('cit-3')" class="citation-badge inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-left transition group">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                        <span class="font-mono font-medium text-slate-800 text-[11px] group-hover:text-teal-900">IPO Guidelines 2012</span>
+                        <span class="text-[10px] text-slate-400">| AYUSH &amp; TK Inventions</span>
+                      </button>
+
+                      <!-- Citation 4 -->
+                      <button onclick="openCitationDetail('cit-4')" class="citation-badge inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-left transition group">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                        <span class="font-mono font-medium text-slate-800 text-[11px] group-hover:text-teal-900">NBA Form III Requirement</span>
+                        <span class="text-[10px] text-slate-400">| Biological Resources</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Missing Facts / Uncertainty Section -->
+                  <div class="bg-amber-50/70 border border-amber-200 rounded p-3 text-[11px] text-amber-900">
+                    <div class="flex items-center gap-1.5 font-semibold text-amber-950 mb-1">
+                      <svg class="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                      <span class="">Identified Uncertainties &amp; Required Verification</span>
+                    </div>
+                    <ul class="list-disc list-inside space-y-0.5 text-amber-900">
+                      <li class=""><strong>Source of Raw Biological Material:</strong> If harvested in India, National Biodiversity Authority (NBA) prior approval under Section 6 is mandatory prior to grant of patent.</li>
+                      <li class=""><strong>Claim Drafting Boundary:</strong> Claims must restrict to the specific lipid ratio and nanoparticle fabrication process; broad claims to "curcumin + piperine" will be rejected.</li>
+                    </ul>
+                  </div>
+
+                  <!-- Practical Next Steps & Actionable Roadmap -->
+                  <div class="border-t border-slate-200 pt-3">
+                    <span class="text-[11px] font-bold text-slate-700 block mb-2">Recommended Next Actions:</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                      <div class="bg-slate-50 border border-slate-200 p-2 rounded">
+                        <span class="font-bold text-slate-800 block text-[10px] text-teal-800">STEP 1: Claim Strategy</span>
+                        Draft claims focusing strictly on the delivery matrix (vesicle size &lt;120nm, zeta potential &gt;-25mV).
+                      </div>
+                      <div class="bg-slate-50 border border-slate-200 p-2 rounded">
+                        <span class="font-bold text-slate-800 block text-[10px] text-teal-800">STEP 2: Comparative Data</span>
+                        Include in vivo synergism tables comparing individual components vs. physical mixture vs. nano-liposome.
+                      </div>
+                      <div class="bg-slate-50 border border-slate-200 p-2 rounded">
+                        <span class="font-bold text-slate-800 block text-[10px] text-teal-800">STEP 3: NBA Form III Filing</span>
+                        File NBA Form III with National Biodiversity Authority concurrently or before commercialization.
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Footer with Action Bar -->
+                <div class="bg-slate-50 px-4 py-2 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs text-slate-500">
+                  <div class="flex items-center gap-3">
+                    <button onclick="switchScenario('escalate')" class="text-teal-800 font-medium hover:underline flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                      Request Human IP Facilitator Review
+                    </button>
+                    <span class="">•</span>
+                    <button class="hover:text-slate-800" onclick="copyAnswerText()">Copy Brief</button>
+                    <output id="copy-feedback" class="sr-only" aria-live="polite"></output>
+                  </div>
+                  <span class="text-[10px] text-slate-500">Illustrative fixture · not generated by the connected service</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Follow-up Questions / Progressive Prompt Bubble -->
+            <div class="flex items-center gap-2 pl-10">
+              <span class="text-[11px] text-slate-500">Explore deeper:</span>
+              <button onclick="switchScenario('caution')" class="text-[11px] bg-white border border-slate-300 hover:border-teal-600 px-2.5 py-1 rounded text-slate-700 transition">
+                "What if we also market this as an OTC Ayurveda Aahara drink?"
+              </button>
+              <button onclick="switchScenario('abstain')" class="text-[11px] bg-white border border-slate-300 hover:border-teal-600 px-2.5 py-1 rounded text-slate-700 transition hidden sm:inline">
+                "Check classical references for Piperine in Charaka Samhita"
+              </button>
+            </div>
+
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 3: PROGRESSIVE CLASSIFICATION QUESTION (One at a time) -->
+          <!-- =================================================================== -->
+          <div id="scenario-caution" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[760px] w-full mx-auto hidden">
+            
+            <!-- User Prompt -->
+            <div class="flex items-start gap-3 justify-end">
+              <div class="bg-slate-100 border border-slate-200 rounded-lg p-3 max-w-[85%] text-xs">
+                <span class="font-semibold text-slate-700 block text-[11px] mb-1">You (Dr. V. Sharma)</span>
+                <p class="">We want to launch a Triphala topical hydrogel for acne, but we aren't sure whether to license it under D&amp;C Cosmetics Schedule S or AYUSH Patent/Proprietary Ayurvedic Medicine.</p>
+              </div>
+              <div class="w-7 h-7 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">VS</div>
+            </div>
+
+            <!-- Assistant Progressive Intake Question (Single Focused Question) -->
+            <div class="flex items-start gap-3">
+              <div class="w-7 h-7 rounded bg-[#0F4C42] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">IP</div>
+              <div class="flex-1 border border-teal-200 bg-white rounded-lg shadow-sm p-4 text-xs space-y-4">
+                
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 font-mono text-[10px] font-bold">PROGRESSIVE CLASSIFICATION STEP 1 OF 3</span>
+                    <span class="text-slate-400">|</span>
+                    <span class="text-slate-600 font-medium">Cosmetic vs. Drug Boundary Analysis</span>
+                  </div>
+                  <span class="text-[11px] font-mono text-slate-500">D&amp;C Act 1940</span>
+                </div>
+
+                <!-- Single Focused Question Header -->
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900 mb-1">
+                    What primary claims will appear on the front product label and marketing literature?
+                  </h3>
+                  <p class="text-xs text-slate-600">
+                    Under Indian law, the legal classification between an AYUSH drug and a Cosmetic is determined primarily by whether you claim to <em>treat or cure a disease</em> versus <em>cleanse, beautify, or improve appearance</em>.
+                  </p>
+                </div>
+
+                <!-- Single-Choice Radio Cards with "Not Sure" option -->
+                <div class="space-y-2 pt-1" role="radiogroup" aria-label="Product claim type selection">
+                  
+                  <label class="flex items-start gap-3 p-3 rounded border border-slate-200 bg-slate-50/50 hover:bg-teal-50/50 hover:border-teal-300 cursor-pointer transition">
+                    <input type="radio" name="claim_type" value="treatment" class="mt-0.5 text-[#0F4C42] focus:ring-teal-500">
+                    <div>
+                      <strong class="text-slate-900 block font-semibold">Therapeutic / Clinical Claims: "Treats active acne vulgaris, kills P. acnes, resolves cystic lesions"</strong>
+                      <span class="text-[11px] text-slate-500 block mt-0.5">Routes to AYUSH Patent/Proprietary Drug (Section 3(h) D&amp;C Act). Requires AYUSH GMP &amp; clinical trial justification.</span>
+                    </div>
+                  </label>
+
+                  <label class="flex items-start gap-3 p-3 rounded border border-slate-200 bg-slate-50/50 hover:bg-teal-50/50 hover:border-teal-300 cursor-pointer transition">
+                    <input type="radio" name="claim_type" value="cosmetic" class="mt-0.5 text-[#0F4C42] focus:ring-teal-500">
+                    <div>
+                      <strong class="text-slate-900 block font-semibold">Aesthetic / Cleansing Claims: "Soothes skin appearance, controls excess surface sebum, herbal clarification"</strong>
+                      <span class="text-[11px] text-slate-500 block mt-0.5">Routes to Cosmetics License (Schedule S / IS standards). No therapeutic claims permitted on packaging.</span>
+                    </div>
+                  </label>
+
+                  <label class="flex items-start gap-3 p-3 rounded border border-slate-200 bg-slate-50/50 hover:bg-teal-50/50 hover:border-teal-300 cursor-pointer transition">
+                    <input type="radio" name="claim_type" value="both" class="mt-0.5 text-[#0F4C42] focus:ring-teal-500">
+                    <div>
+                      <strong class="text-slate-900 block font-semibold">Dual Claims: Intending to make therapeutic statements while filing as a cosmetic</strong>
+                      <span class="text-[11px] text-amber-700 block mt-0.5">High regulatory risk: Classifies as misbranded cosmetic under Section 17C of D&amp;C Act.</span>
+                    </div>
+                  </label>
+
+                  <label class="flex items-start gap-3 p-3 rounded border border-dashed border-slate-300 bg-white hover:bg-slate-50 cursor-pointer transition">
+                    <input type="radio" name="claim_type" value="not_sure" checked="" class="mt-0.5 text-[#0F4C42] focus:ring-teal-500">
+                    <div>
+                      <strong class="text-slate-800 block font-semibold">Not sure / We have not finalized label claims yet</strong>
+                      <span class="text-[11px] text-slate-500 block mt-0.5">The assistant will evaluate both candidate paths side-by-side with statutory pros and cons.</span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Submit Button for Progressive Step -->
+                <div class="flex items-center justify-between pt-2">
+                  <button onclick="submitClassificationStep()" class="px-4 py-1.5 bg-[#0F4C42] hover:bg-[#0A3730] text-white font-medium rounded text-xs transition flex items-center gap-1.5">
+                    <span class="">Continue to Step 2</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </button>
+                  <span class="text-[11px] text-slate-400">One focused question at a time • No long forms</span>
+                </div>
+
+              </div>
+            </div>
+
+          </div><!-- =================================================================== -->
+<!-- SCENARIO 4: PASS_WITH_CAUTION (Explicit Known / Uncertain / Missing Facts Separation) -->
+<!-- =================================================================== -->
+<div id="scenario-pass-caution" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[760px] w-full mx-auto hidden">
+  <div class="flex items-start gap-3 justify-end">
+    <div class="bg-slate-100 border border-slate-200 rounded-lg p-3 max-w-[85%] text-xs">
+      <span class="font-semibold text-slate-700 block text-[11px] mb-1">You (Dr. V. Sharma)</span>
+      <p class="">Can we patent an improved enteric-coated micro-pellet formulation of Triphala extract combined with zinc gluconate for inflammatory bowel disease?</p>
+    </div>
+    <div class="w-7 h-7 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">VS</div>
+  </div>
+
+  <div class="flex items-start gap-3">
+    <div class="w-7 h-7 rounded bg-[#0F4C42] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">IP</div>
+    <div class="flex-1 border border-amber-300 rounded-lg bg-white shadow-sm overflow-hidden text-xs">
+      <div class="bg-amber-50 px-4 py-2.5 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+            <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+            DECISION: PASS WITH CAUTION (MISSING FACTS / STATUTORY HURDLES)
+          </span>
+          <span class="text-slate-400">|</span>
+          <span class="text-slate-600 font-medium">Patents Act § 3(p) &amp; § 3(e) Analysis</span>
+        </div>
+        <div class="flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-amber-200 text-[11px] text-amber-900 font-mono font-semibold">
+          <span class="">System Confidence:</span>
+          <span class="text-amber-800 font-bold">72/100</span>
+        </div>
+      </div>
+
+      <div class="p-4 space-y-4">
+        <p class="text-slate-800 leading-relaxed font-sans text-xs">
+          Your formulation possesses candidate patentability strictly regarding the <em>enteric micro-pellet release profile and physical carrier stability</em>. However, under Section 3(p) and 3(e) of the Indian Patents Act, statutory hurdles remain until experimental synergism is proven against classical aqueous or hydroalcoholic extracts.
+        </p>
+
+        <!-- Tripartite Separation: Known Facts, Uncertainties, Missing Facts -->
+        <div class="space-y-2.5">
+          <!-- 1. Known / Established Facts -->
+          <div class="p-3 rounded border border-emerald-200 bg-emerald-50/50">
+            <div class="flex items-center gap-1.5 font-bold text-emerald-950 mb-1 text-[11px]">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+              <span class="">1. Established Grounding Facts (Verified Corpus)</span>
+            </div>
+            <ul class="list-disc list-inside space-y-0.5 text-slate-700 text-[11px]">
+              <li class="">Triphala (Haritaki, Bibhitaki, Amalaki) is documented extensively in Charaka Samhita Chikitsasthana 1:3 for bowel &amp; digestive health (Section 3(p) prior art).</li>
+              <li class="">Synthetic polymer enteric coatings (e.g., Eudragit L30D-55) are not traditional knowledge and form valid patentable subject matter if combined synergistically.</li>
+            </ul>
+          </div>
+
+          <!-- 2. Identified Uncertainties -->
+          <div class="p-3 rounded border border-amber-200 bg-amber-50/50">
+            <div class="flex items-center gap-1.5 font-bold text-amber-950 mb-1 text-[11px]">
+              <svg class="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+              <span class="">2. Identified Regulatory &amp; Examination Uncertainties</span>
+            </div>
+            <ul class="list-disc list-inside space-y-0.5 text-slate-700 text-[11px]">
+              <li class="">The addition of Zinc Gluconate triggers Section 3(e) scrutiny: the IPO will presume it is a mere aggregation unless comparative mucosal recovery data demonstrates non-additive synergism.</li>
+              <li class="">Whether the Triphala is sourced from cultivated farms or forest collection determines whether State Biodiversity Board (SBB) intimation or National Biodiversity Authority (NBA) approval applies.</li>
+            </ul>
+          </div>
+
+          <!-- 3. Missing Facts Mandatory for Final Filing -->
+          <div class="p-3 rounded border border-rose-200 bg-rose-50/50">
+            <div class="flex items-center gap-1.5 font-bold text-rose-950 mb-1 text-[11px]">
+              <svg class="w-3.5 h-3.5 text-rose-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+              <span class="">3. Missing Mandatory Facts (Requires Verification)</span>
+            </div>
+            <ul class="list-disc list-inside space-y-0.5 text-slate-700 text-[11px]">
+              <li class="">Comparative dissolution curve data (pH 1.2 simulated gastric fluid vs pH 6.8 colonic fluid).</li>
+              <li class="">Formal declaration of foreign equity holdings in the applicant entity under Section 3(2) of Biological Diversity Act.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Action Pathway -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
+          <button onclick="toggleEvidenceDrawer()" class="text-teal-800 font-medium hover:underline flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Inspect IPO Synergism Precedents in Drawer
+          </button>
+          <button onclick="switchScenario('escalate')" class="px-3 py-1.5 bg-[#0F4C42] hover:bg-[#0A3730] text-white font-medium rounded text-xs transition">
+            Escalate to Patent Attorney Review
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- SCENARIO 7: ESCALATION CONFIRMED DISPATCHED STATE -->
+<!-- =================================================================== -->
+<div id="scenario-escalation-confirmed" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[760px] w-full mx-auto hidden">
+  <div class="bg-white border border-emerald-300 rounded-lg shadow-md overflow-hidden text-xs">
+    <div class="bg-[#0F4C42] text-white px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">✓</span>
+        <div>
+          <h2 class="text-sm font-bold">Escalation Dispatched &amp; Locked (Ref: AY-FAC-2024-88192)</h2>
+          <p class="text-[11px] text-emerald-100">Direct Handoff to Accredited AYUSH IP Facilitator</p>
+        </div>
+      </div>
+      <span class="text-[10px] font-mono bg-teal-900 px-2 py-0.5 rounded border border-teal-700">Secure Transcript Bound</span>
+    </div>
+
+    <div class="p-5 space-y-4">
+      <div class="p-3.5 bg-emerald-50 border border-emerald-200 rounded text-emerald-950 text-xs space-y-1.5">
+        <p class="font-semibold text-[13px]">Transmission Successful</p>
+        <p class="text-[11px] text-emerald-900 leading-relaxed">
+          Your research dossier, along with sanitized session conversation parameters, has been securely queued to an accredited patent facilitator under the Ministry of AYUSH IPR Support Scheme. An acknowledgment receipt has been transmitted to <strong>vivek.sharma@herbotech.in</strong>.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-[11px] space-y-1.5 text-slate-700">
+        <div class="flex justify-between border-b border-slate-200 pb-1">
+          <span class="">Facilitator Assignment ID:</span>
+          <span class="font-bold text-slate-900">IN-AYUSH-PUNE-FAC-04</span>
+        </div>
+        <div class="flex justify-between border-b border-slate-200 pb-1">
+          <span class="">Response SLA:</span>
+          <span class="text-emerald-800 font-semibold">Within 2 Business Days (48h)</span>
+        </div>
+        <div class="flex justify-between border-b border-slate-200 pb-1">
+          <span class="">Confidentiality Protection:</span>
+          <span class="text-teal-900">Statutory Non-Disclosure under Rule 24</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="">Compliance Audit Hash:</span>
+          <span class="text-slate-500">sha256:d8a9f24b10...94e1</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+        <button onclick="switchScenario('active')" class="px-3.5 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded text-xs font-medium">
+          ← Return to Active Research Chat
+        </button>
+        <button onclick="switchScenario('new')" class="px-3.5 py-1.5 bg-[#0F4C42] hover:bg-[#0A3730] text-white font-semibold rounded text-xs transition">
+          Start New Research Query
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 4: EVIDENCE-BASED ABSTENTION (TKDL & Insufficient Corpus) -->
+          <!-- =================================================================== -->
+          <div id="scenario-abstain" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[760px] w-full mx-auto hidden">
+            
+            <div class="flex items-start gap-3 justify-end">
+              <div class="bg-slate-100 border border-slate-200 rounded-lg p-3 max-w-[85%] text-xs">
+                <span class="font-semibold text-slate-700 block text-[11px] mb-1">You</span>
+                <p class="">Can you show me the exact Sanskrit sloka and proprietary formulation text from the restricted TKDL database for the compound formulation "Pippalyasava" to prove prior art?</p>
+              </div>
+              <div class="w-7 h-7 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">VS</div>
+            </div>
+
+            <!-- Abstention Answer Card -->
+            <div class="flex items-start gap-3">
+              <div class="w-7 h-7 rounded bg-[#0F4C42] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">IP</div>
+              <div class="flex-1 border border-slate-300 bg-white rounded-lg shadow-sm overflow-hidden text-xs">
+                
+                <!-- Abstention Header -->
+                <div class="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-slate-200 text-slate-800 border border-slate-300">
+                      STATUS: ABSTAIN (EVIDENCE BOUNDARY REACHED)
+                    </span>
+                    <span class="text-slate-500">TKDL Non-Public Access Rule</span>
+                  </div>
+                  <span class="font-mono text-xs text-slate-500">CSIR-TKDL Policy</span>
+                </div>
+
+                <div class="p-4 space-y-4">
+                  <!-- Reason for Abstention -->
+                  <div class="prose prose-xs text-slate-800 leading-relaxed font-sans">
+                    <h4 class="font-bold text-slate-900 text-xs mb-1">Authoritative Access Boundary Explanation</h4>
+                    <p class="">
+                      <strong>IP-SAKTI Sahayak cannot access or reproduce confidential internal TKDL database transcriptions.</strong> Under the Access Agreement established by the Council of Scientific and Industrial Research (CSIR) and Department of Indian Systems of Medicine, full TKDL contents are strictly restricted to authorized International Patent Office examiners under non-disclosure agreements.
+                    </p>
+                  </div>
+
+                  <!-- Authorized Public Pointer -->
+                  <div class="bg-blue-50 border border-blue-200 rounded p-3 text-[11px] space-y-1.5 text-blue-900">
+                    <strong class="text-blue-950 flex items-center gap-1.5">
+                      <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      Authorized Public Review Pointer:
+                    </strong>
+                    <p class="">
+                      While the proprietary digital database cannot be scraped, <em>Pippalyasava</em> is an official public classical drug defined in the <strong>Ayurvedic Formulary of India (AFI), Part I, Formulation 1:26</strong>, citing classical reference <em>Bhaishajya Ratnavali, Agnimandya Rogadhikara 39-44</em>.
+                    </p>
+                    <div class="pt-1">
+                      <span class="font-mono text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">Public Authority: Ministry of AYUSH AFI 2003 Edition</span>
+                    </div>
+                  </div>
+
+                  <!-- Sources Searched -->
+                  <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Corpus Searched for Verification</span>
+                    <div class="bg-slate-50 p-2.5 rounded border border-slate-200 text-[11px] text-slate-600 space-y-1 font-mono">
+                      <div class="">✓ Public Domain Ayurvedic Formulary of India (AFI Vol I &amp; II) [MATCH FOUND]</div>
+                      <div class="">✗ CSIR Internal TKDL Portal [ACCESS DENIED BY POLICY - NOT SEARCHED]</div>
+                      <div class="">✓ Indian Patent Office Search Database (InPASS §3p cases) [NO RELEVANT LITIGATION]</div>
+                    </div>
+                  </div>
+
+                  <!-- Useful Next Action -->
+                  <div class="border-t border-slate-200 pt-3">
+                    <span class="font-bold text-slate-800 block text-xs mb-1">Recommended Authorized Route:</span>
+                    <p class="text-slate-600 text-[11px] mb-2">
+                      If preparing an examination response or freedom-to-operate study, cite the published <strong>Ayurvedic Pharmacopoeia of India (API)</strong> or consult the authorized CSIR TKDL Unit through formal government channels.
+                    </p>
+                    <button onclick="switchScenario('escalate')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-medium transition">
+                      Request Authorized AYUSH IP Facilitator
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 5: ESCALATION & HUMAN REVIEW CONSENT DIALOG -->
+          <!-- =================================================================== -->
+          <div id="scenario-escalate" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[760px] w-full mx-auto hidden">
+            
+            <div class="bg-white border border-slate-300 rounded-lg shadow-md overflow-hidden text-xs">
+              <!-- Escalation Modal / Workflow Header -->
+              <div class="bg-[#0F4C42] text-white px-4 py-3 flex items-center justify-between">
+                <div>
+                  <h2 class="text-sm font-bold flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                    Human Expert Escalation &amp; Consent Protocol
+                  </h2>
+                  <p class="text-[11px] text-emerald-100">Ayurveda IP Facilitator / Statutory Legal Practitioner Review</p>
+                </div>
+                <span class="text-[10px] font-mono bg-teal-900 px-2 py-0.5 rounded border border-teal-700">DPDP Act Compliant</span>
+              </div>
+
+              <!-- Recommendation Reason -->
+              <div class="p-4 space-y-4">
+                <div class="bg-amber-50 border border-amber-200 rounded p-3 text-amber-900 text-[11px]">
+                  <strong class="block text-amber-950 mb-0.5">Why is human review recommended for this query?</strong>
+                  Your query involves <strong>Section 3 of the Biological Diversity Act</strong> (export/foreign participation involving commercial use of <em>Pterocarpus santalinus</em> / Red Sanders) with severe criminal penalty implications under Section 55. Automated routing cannot evaluate commercial equity structures or State Biodiversity Board benefit-sharing percentages.
+                </div>
+
+                <!-- Explicit Consent Requirements (Unchecked by default) -->
+                <div class="border border-slate-200 rounded p-3 bg-slate-50 space-y-3">
+                  <span class="font-bold text-slate-800 block text-xs">Mandatory Confidentiality &amp; Data Sharing Consent</span>
+                  <p class="text-[11px] text-slate-600">
+                    Before transmitting your query details, formulation specifics, or entity structure to an accredited AYUSH IP Facilitator, please review and affirmatively select your consent options. <strong>All checkboxes are unchecked by default.</strong>
+                  </p>
+
+                  <div class="space-y-2 pt-1">
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                      <input type="checkbox" id="consent-conversation" class="mt-0.5 text-[#0F4C42] focus:ring-teal-500 rounded">
+                      <span class="text-[11px] text-slate-800">
+                        <strong>Consent to share conversation transcript:</strong> I authorize transmitting the query text and research analysis from this session (<code class="font-mono text-slate-600">sess_in_ay_8941</code>) to the designated AYUSH IP Facilitator.
+                      </span>
+                    </label>
+
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                      <input type="checkbox" id="consent-invention" class="mt-0.5 text-[#0F4C42] focus:ring-teal-500 rounded">
+                      <span class="text-[11px] text-slate-800">
+                        <strong>Consent to share proprietary technical details:</strong> I authorize transmitting formulation percentages, process descriptions, and PK trial parameters.
+                      </span>
+                    </label>
+
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                      <input type="checkbox" id="consent-nda" class="mt-0.5 text-[#0F4C42] focus:ring-teal-500 rounded">
+                      <span class="text-[11px] text-slate-800">
+                        <strong>Acknowledge statutory facilitator NDA:</strong> I understand that verified government facilitators are bound by Rule 24 professional ethics, but this transmission does not establish an attorney-client relationship until formally retained.
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Optional Context & Contact Fields -->
+                <div class="space-y-3">
+                  <span class="font-bold text-slate-800 block text-xs">Contact &amp; Entity Details</span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label for="escalation-entity" class="block text-[11px] font-medium text-slate-700 mb-1">Entity Name / Institution</label>
+                      <input id="escalation-entity" type="text" class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:outline-none focus:border-teal-600 bg-white">
+                    </div>
+                    <div>
+                      <label for="escalation-registration" class="block text-[11px] font-medium text-slate-700 mb-1">DIPP / MSME Registration (Optional)</label>
+                      <input id="escalation-registration" type="text" class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:outline-none focus:border-teal-600 bg-white font-mono">
+                    </div>
+                    <div>
+                      <label for="escalation-phone" class="block text-[11px] font-medium text-slate-700 mb-1">Direct Phone for Consultation</label>
+                      <input id="escalation-phone" type="tel" autocomplete="tel" class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:outline-none focus:border-teal-600 bg-white font-mono">
+                    </div>
+                    <div>
+                      <label for="escalation-region" class="block text-[11px] font-medium text-slate-700 mb-1">Preferred AYUSH Cluster Region</label>
+                      <select id="escalation-region" class="w-full text-xs px-2.5 py-1.5 rounded border border-slate-300 focus:outline-none focus:border-teal-600 bg-white">
+                        <option>Western Zone (Mumbai / Pune / Gujarat)</option>
+                        <option>Northern Zone (Delhi / AYUSH Bhawan / HP)</option>
+                        <option>Southern Zone (Kerala / Bangalore / Chennai)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Action Confirmation Buttons -->
+                <div class="flex items-center justify-between pt-3 border-t border-slate-200">
+                  <button onclick="switchScenario('active')" class="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900">
+                    Cancel &amp; Return to Chat
+                  </button>
+                  <button onclick="confirmEscalation()" id="submit-escalation-btn" class="px-4 py-2 bg-[#0F4C42] hover:bg-[#0A3730] text-white font-semibold rounded text-xs shadow-sm transition flex items-center gap-1.5">
+                    <span class="">Submit for Human Review</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                  </button>
+                </div>
+
+                <!-- Confirmation Alert Placeholder -->
+                <div id="escalation-confirmed-alert" class="hidden bg-emerald-50 border border-emerald-300 rounded p-3 text-emerald-900 text-[11px] space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-emerald-950">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="">Escalation Request Dispatched (Ref #AY-FAC-88192)</span>
+                  </div>
+                  <p class="">An accredited Ayurveda IP Facilitator has been assigned. You will receive an acknowledgment at <code>vivek.sharma@herbotech.in</code> within 2 business days. Your invention details remain protected under strict statutory NDA.</p>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 6: SERVICE / CORPUS UNAVAILABLE (RAG Fail-Closed State) -->
+          <!-- =================================================================== -->
+          <div id="scenario-unavailable" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 max-w-[760px] w-full mx-auto hidden">
+            
+            <div class="bg-white border border-rose-200 rounded-lg shadow-sm overflow-hidden text-xs">
+              <!-- Service Outage Header -->
+              <div class="bg-rose-50 border-b border-rose-200 px-4 py-3 flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-rose-600 text-white flex items-center justify-center font-bold flex-shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div>
+                  <h3 id="runtime-api-heading" class="text-sm font-bold text-rose-950">No evidence-backed answer was returned</h3>
+                  <span id="runtime-api-code" class="font-mono text-[10px] text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded font-semibold">API status not checked</span>
+                </div>
+              </div>
+
+              <!-- Rigorous Explanation & Safe Degradation -->
+              <div class="p-4 space-y-4 text-slate-700">
+                <div class="prose prose-xs text-slate-800 leading-relaxed font-sans">
+                  <p class="font-medium text-slate-900">
+                    In accordance with our safety architecture, <strong>IP-SAKTI Sahayak strictly fails closed</strong> when verified statutory law vectors or official Gazette regulations cannot be verified.
+                  </p>
+                  <p class="text-xs text-slate-600 mt-1">
+                    To prevent hallucination of legal sections, fictional judicial precedents, or outdated biological diversity rules, the system will never generate an ungrounded or speculative legal opinion when knowledge stores are offline.
+                  </p>
+                </div>
+
+                <!-- Diagnostics Table -->
+                <div class="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-[11px] space-y-1.5">
+                  <div class="flex justify-between text-slate-600 border-b border-slate-200/60 pb-1">
+                    <span class="">Public Node API Gateway (/api/v1):</span>
+                    <span id="runtime-api-status" class="text-slate-700 font-bold">Not checked</span>
+                  </div>
+                  <div class="flex justify-between text-slate-600 border-b border-slate-200/60 pb-1">
+                    <span class="">Internal Vector Corpus Service:</span>
+                    <span id="runtime-corpus-status" class="text-slate-700 font-bold">Not reported</span>
+                  </div>
+                  <div class="flex justify-between text-slate-600 border-b border-slate-200/60 pb-1">
+                    <span class="">Statutory Citation Verifier:</span>
+                    <span id="runtime-verifier-status" class="text-slate-700 font-bold">Not reported</span>
+                  </div>
+                  <div class="flex justify-between text-slate-600">
+                    <span class="">Last Grounded Synchronization:</span>
+                    <span id="runtime-corpus-sync" class="text-slate-800">Not provided</span>
+                  </div>
+                </div>
+
+                <!-- Recovery Actions -->
+                <div class="pt-2 flex flex-wrap items-center gap-2">
+                  <button onclick="retryConnection()" class="px-3.5 py-1.5 bg-[#0F4C42] hover:bg-[#0A3730] text-white rounded text-xs font-semibold flex items-center gap-1.5 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span class="">Retry Official Corpus Link</span>
+                  </button>
+                  <button onclick="switchScenario('active')" class="px-3 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded text-xs font-medium">
+                    Load Cached Demo Session
+                  </button>
+                  <a href="https://ipindia.gov.in" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-xs text-teal-800 hover:underline">
+                    Access Official IP India Portal Directly →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 7: AUTHENTICATION (Restrained Sign-in & Registration) -->
+          <!-- =================================================================== -->
+          <div id="scenario-auth" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-[480px] w-full mx-auto hidden">
+            
+            <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden text-xs">
+              <!-- Tabs: Sign In / Register -->
+              <div class="flex border-b border-slate-200 bg-slate-50 text-xs">
+                <button onclick="setAuthTab('login')" id="tab-login" class="flex-1 py-2.5 text-center font-bold text-[#0F4C42] border-b-2 border-[#0F4C42] bg-white">
+                  Sign In
+                </button>
+                <button onclick="setAuthTab('register')" id="tab-register" class="flex-1 py-2.5 text-center font-medium text-slate-500 hover:text-slate-800">
+                  New Researcher Registration
+                </button>
+              </div>
+
+              <!-- Sign In Form -->
+              <div id="auth-login-pane" class="p-5 space-y-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900 mb-0.5">Access Research Workspace</h3>
+                  <p class="text-slate-500 text-[11px]">Sign in with your email and password.</p>
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <label for="login-email" class="block text-[11px] font-semibold text-slate-700 mb-1">Email</label>
+                    <input id="login-email" type="email" autocomplete="username" required placeholder="you@example.com" class="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:border-teal-600 focus:outline-none">
+                  </div>
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label for="login-password" class="text-[11px] font-semibold text-slate-700">Password</label>
+                    </div>
+                    <input id="login-password" type="password" autocomplete="current-password" required class="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:border-teal-600 focus:outline-none">
+                  </div>
+                </div>
+
+                <output id="login-feedback" class="block text-[11px] text-rose-700" aria-live="polite"></output>
+
+                <button onclick="handleAuth('login')" class="w-full py-2 bg-[#0F4C42] hover:bg-[#0A3730] text-white font-bold rounded text-xs shadow-sm transition">
+                  Sign In
+                </button>
+              </div>
+
+              <!-- Registration Pane -->
+              <div id="auth-register-pane" class="p-5 space-y-4 hidden">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900 mb-0.5">Create an account</h3>
+                  <p class="text-slate-500 text-[11px]">Your profile is used to save conversations in this workspace.</p>
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <label for="register-name" class="block text-[11px] font-semibold text-slate-700 mb-1">Full Legal Name</label>
+                    <input id="register-name" type="text" autocomplete="name" placeholder="Your name (optional)" class="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:border-teal-600 focus:outline-none">
+                  </div>
+                  <div>
+                    <label for="register-email" class="block text-[11px] font-semibold text-slate-700 mb-1">Email</label>
+                    <input id="register-email" type="email" autocomplete="email" required placeholder="you@example.com" class="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:border-teal-600 focus:outline-none">
+                  </div>
+                  <div>
+                    <label for="register-password" class="block text-[11px] font-semibold text-slate-700 mb-1">Password (at least 10 characters)</label>
+                    <input id="register-password" type="password" autocomplete="new-password" minlength="10" required class="w-full text-xs px-3 py-2 rounded border border-slate-300 focus:border-teal-600 focus:outline-none">
+                  </div>
+                  <output id="register-feedback" class="block text-[11px] text-rose-700" aria-live="polite"></output>
+                </div>
+
+                <button onclick="handleAuth('register')" class="w-full py-2 bg-[#0F4C42] hover:bg-[#0A3730] text-white font-bold rounded text-xs shadow-sm transition">
+                  Create Account
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- SCENARIO 8: COMPONENT & STATE MATRIX (Direct Deliverable) -->
+          <!-- =================================================================== -->
+          <div id="scenario-components" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-[840px] w-full mx-auto hidden">
+            
+            <div class="border-b border-slate-200 pb-2">
+              <h2 class="text-base font-bold text-slate-900">IP-SAKTI Sahayak State &amp; Decision Sheet</h2>
+              <p class="text-xs text-slate-500">Design tokens, 5 distinct answer decision states, confidence scoring, and citation taxonomy.</p>
+            </div>
+
+            <!-- Distinct Answer States Matrix (PASS, PASS_WITH_CAUTION, ABSTAIN, ESCALATE, UNAVAILABLE) -->
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">1. Five Distinct Statutory Decision States</span>
+              <div class="space-y-3">
+                <!-- State 1: PASS -->
+                <div class="p-3 rounded border border-emerald-300 bg-emerald-50/50 text-xs">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                      DECISION: PASS (CLEAR ROUTE CONFIRMED)
+                    </span>
+                    <span class="font-mono text-[10px] text-emerald-900">Confidence: 94/100</span>
+                  </div>
+                  <p class="text-slate-800">Clear statutory pathway verified. Example: Classical drug formulation strictly conforming to Ayurvedic Pharmacopoeia of India (API) under Section 3(a) D&amp;C Act.</p>
+                </div>
+
+                <!-- State 2: PASS_WITH_CAUTION -->
+                <div class="p-3 rounded border border-amber-300 bg-amber-50/50 text-xs">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+                      DECISION: PASS WITH CAUTION (MISSING FACTS / STATUTORY HURDLES)
+                    </span>
+                    <span class="font-mono text-[10px] text-amber-900">Confidence: 74/100</span>
+                  </div>
+                  <p class="text-slate-800">Patentable or licensable in principle, but requires comparative synergism data (Section 3(e)) or prior NBA Form III approval.</p>
+                </div>
+
+                <!-- State 3: ABSTAIN -->
+                <div class="p-3 rounded border border-slate-300 bg-slate-100 text-xs">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-slate-200 text-slate-800 border border-slate-300">
+                      <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+                      DECISION: ABSTAIN (AUTHORITATIVE EVIDENCE INSUFFICIENT)
+                    </span>
+                    <span class="font-mono text-[10px] text-slate-600">Corpus Limit Reached</span>
+                  </div>
+                  <p class="text-slate-800">Restricted TKDL proprietary text, pending litigation without final Gazette ruling, or queries outside verified legal corpus.</p>
+                </div>
+
+                <!-- State 4: ESCALATE -->
+                <div class="p-3 rounded border border-indigo-300 bg-indigo-50/50 text-xs">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-300">
+                      <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                      DECISION: ESCALATE (MANDATORY HUMAN PRACTITIONER REVIEW)
+                    </span>
+                    <span class="font-mono text-[10px] text-indigo-900">High Legal Exposure</span>
+                  </div>
+                  <p class="text-slate-800">Criminal liability exposure (NBA §55), cross-border treaty conflict (CBD Nagoya Protocol vs. Indian sovereign rights), or major M&amp;A IP asset transfer.</p>
+                </div>
+
+                <!-- State 5: SERVICE UNAVAILABLE -->
+                <div class="p-3 rounded border border-rose-300 bg-rose-50/50 text-xs">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
+                      <span class="w-2 h-2 rounded-full bg-rose-600"></span>
+                      DECISION: SERVICE UNAVAILABLE (RAG FAIL-CLOSED)
+                    </span>
+                    <span class="font-mono text-[10px] text-rose-900">Error 503 / Corpus Disconnected</span>
+                  </div>
+                  <p class="text-slate-800">Knowledge vector corpus unavailable. Generation immediately halted to prevent legal hallucination.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Citation Taxonomy Table -->
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">2. Statutory Citation Contract &amp; Authority Hierarchy</span>
+              <div class="border border-slate-200 rounded overflow-hidden text-xs">
+                <table class="w-full text-left">
+                  <thead class="bg-slate-50 border-b border-slate-200 text-[11px] text-slate-600">
+                    <tr>
+                      <th class="p-2.5 font-semibold">Tier</th>
+                      <th class="p-2.5 font-semibold">Authority</th>
+                      <th class="p-2.5 font-semibold">Statutory Reference</th>
+                      <th class="p-2.5 font-semibold">Evidence Weight</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-y-slate-200 text-[11px]">
+                    <tr>
+                      <td class="p-2.5 font-mono text-emerald-800 font-bold">Tier 1 (Binding)</td>
+                      <td class="p-2.5 font-semibold">Indian Parliament Acts</td>
+                      <td class="p-2.5">Patents Act 1970 § 3(p), D&amp;C Act 1940, Biological Diversity Act 2002</td>
+                      <td class="p-2.5 text-slate-600">Primary legal ground</td>
+                    </tr>
+                    <tr>
+                      <td class="p-2.5 font-mono text-teal-800 font-bold">Tier 2 (Official)</td>
+                      <td class="p-2.5 font-semibold">Ministry Regulations</td>
+                      <td class="p-2.5">FSSAI Ayurveda Aahara 2022, D&amp;C Rules Schedule Z/P</td>
+                      <td class="p-2.5 text-slate-600">Binding administrative rule</td>
+                    </tr>
+                    <tr>
+                      <td class="p-2.5 font-mono text-blue-800 font-bold">Tier 3 (Guidance)</td>
+                      <td class="p-2.5 font-semibold">IPO &amp; CSIR Guidelines</td>
+                      <td class="p-2.5">IPO Guidelines for AYUSH Patent Applications 2012</td>
+                      <td class="p-2.5 text-slate-600">Persuasive examination standard</td>
+                    </tr>
+                    <tr>
+                      <td class="p-2.5 font-mono text-amber-800 font-bold">Tier 4 (International)</td>
+                      <td class="p-2.5 font-semibold">WIPO / CBD Treaties</td>
+                      <td class="p-2.5">Nagoya Protocol Art. 15, TRIPS Art. 27.3(b)</td>
+                      <td class="p-2.5 text-slate-600">Harmonized context (Non-superseding)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- PERSISTENT BOTTOM COMPOSER -->
+          <!-- =================================================================== -->
+          <footer class="bg-white border-t border-slate-200 p-3 md:p-4 flex-shrink-0 z-10">
+            <div class="max-w-[760px] mx-auto">
+              
+              <!-- Active Route Filters & Tags -->
+              <div class="flex items-center justify-between mb-2 text-xs">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[10px] text-slate-400 font-medium">Scope:</span>
+                  <span class="bg-teal-50 text-[#0F4C42] border border-teal-200 px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1">
+                    <span id="composer-scope">India jurisdiction</span>
+                  </span>
+                  <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1">
+                    <span class="">Citations shown when returned</span>
+                  </span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono hidden sm:inline">Press Enter ↵ to Send</span>
+              </div>
+
+              <!-- Textarea & Controls -->
+              <div class="border border-slate-300 rounded-lg bg-white shadow-sm focus-within:border-teal-700 focus-within:ring-1 focus-within:ring-teal-700 transition">
+                <label for="prompt-textarea" class="sr-only">Ask an Ayurveda IP or regulatory question</label>
+                <textarea id="prompt-textarea" rows="2" placeholder="Ask about patentability under Section 3(p), traditional knowledge prior art, D&amp;C Act licensing, or biodiversity ABS approval..." class="w-full p-2.5 text-xs text-slate-800 placeholder-slate-400 bg-transparent resize-none focus:outline-none"></textarea>
+                
+                <div class="flex items-center justify-between px-2.5 py-1.5 border-t border-slate-100 bg-slate-50/50 rounded-b-lg text-xs">
+                  <div class="flex items-center gap-1 text-slate-500">
+                    <!-- Feature Flagged Voice Button (Disabled with tooltip) -->
+                    <button class="p-1 rounded hover:bg-slate-200 text-slate-400 cursor-not-allowed opacity-60" title="Voice processing is feature-flagged. Disabled until audio consent is provided." disabled="">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    </button>
+                    <!-- Document Attachment (For specification text) -->
+                    <button class="p-1 rounded text-slate-400 cursor-not-allowed" title="Attachments are not available yet" aria-label="Attachments are not available yet" disabled>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    </button>
+                    <span class="text-[10px] text-slate-400 pl-1">Attachments unavailable</span>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <button onclick="handleSend()" class="px-3.5 py-1.5 bg-[#0F4C42] hover:bg-[#0A3730] text-white font-semibold rounded text-xs transition flex items-center gap-1.5 shadow-sm">
+                      <span class="">Analyze Route</span>
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-1.5 flex items-center justify-between text-[10px] text-slate-400">
+                <span class="">Node.js API: <code class="font-mono text-slate-600">/api/v1/chat</code></span>
+                <span class="">Grounding: Non-binding research determination</span>
+              </div>
+            </div>
+          </footer>
+
+        </main>
+
+        <!-- ===================================================================== -->
+        <!-- RIGHT PANE: DESKTOP EVIDENCE DRAWER (Collapsible without hiding chat) -->
+        <!-- ===================================================================== -->
+        <aside id="evidence-drawer" aria-labelledby="evidence-drawer-heading" class="w-80 lg:w-96 flex-shrink-0 bg-white border-l border-slate-200 flex flex-col justify-between hidden md:flex transition-all duration-200 z-20 shadow-sm">
+          <!-- Drawer Header -->
+          <div class="p-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                <h3 id="evidence-drawer-heading" class="text-xs font-bold text-slate-900 uppercase tracking-wider">Authoritative Evidence Drawer</h3>
+              </div>
+              <p class="text-[10px] text-slate-500">Statutory acts, guidelines, and TKDL pointers</p>
+            </div>
+            <button onclick="toggleEvidenceDrawer()" class="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200" aria-label="Close evidence drawer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          <div id="evidence-fixture-notice" class="hidden border-b border-amber-200 bg-amber-50 px-3.5 py-2 text-[10px] leading-relaxed text-amber-950">
+            Illustrative citation fixtures only. No active legal corpus or live registry lookup is connected.
+          </div>
+
+          <!-- Drawer Citation Details & Inspector -->
+          <div id="evidence-drawer-content" class="flex-1 overflow-y-auto p-3.5 space-y-4 text-xs">
+            
+            <!-- Citation 1: Patents Act §3(p) -->
+            <div id="cit-card-1" class="border border-slate-200 rounded p-3 bg-white hover:border-teal-300 transition space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] font-bold text-teal-900 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
+                  Patents Act 1970 § 3(p)
+                </span>
+                <span class="text-[9px] font-mono text-emerald-800 bg-emerald-100 px-1 rounded">Primary Statute</span>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-xs">Traditional Knowledge Statutory Exclusion</h4>
+                <p class="text-[11px] text-slate-600 leading-relaxed font-serif italic mt-0.5">
+                  "An invention which in effect, is traditional knowledge or which is an aggregation or duplication of known properties of traditionally known component or components."
+                </p>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-[10px] text-slate-500 space-y-1">
+                <div class="flex justify-between">
+                  <span class="">Enacted Authority:</span>
+                  <span class="font-medium text-slate-700">Parliament of India (Act 39 of 1970)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="">Effective Date:</span>
+                  <span class="font-medium text-slate-700">Amended by Act 38 of 2002</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="">Official Gazette Link:</span>
+                  <a href="https://ipindia.gov.in" target="_blank" class="text-teal-800 hover:underline">ipindia.gov.in/act-39-1970</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Citation 2: Patents Act §3(e) Synergism -->
+            <div id="cit-card-2" class="border border-slate-200 rounded p-3 bg-white hover:border-teal-300 transition space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                  Patents Act 1970 § 3(e)
+                </span>
+                <span class="text-[9px] font-mono text-amber-800 bg-amber-100 px-1 rounded">Synergism Test</span>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-xs">Mere Admixture vs. Synergistic Combination</h4>
+                <p class="text-[11px] text-slate-600 leading-relaxed font-serif italic mt-0.5">
+                  "A substance obtained by a mere admixture resulting only in the aggregation of the properties of the components thereof or a process for producing such substance."
+                </p>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-[10px] text-slate-500 space-y-1">
+                <div class="flex justify-between">
+                  <span class="">Applicable Burden:</span>
+                  <span class="font-medium text-slate-700">Applicant must show enhanced effect</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="">Key Precedent:</span>
+                  <span class="font-medium text-slate-700">IPO Decision in IN/PCT/2002/00194</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Citation 3: IPO AYUSH Examination Guidelines 2012 -->
+            <div id="cit-card-3" class="border border-slate-200 rounded p-3 bg-white hover:border-teal-300 transition space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] font-bold text-blue-900 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                  IPO Guidelines 2012 § 4.2
+                </span>
+                <span class="text-[9px] font-mono text-blue-800 bg-blue-100 px-1 rounded">Official Practice</span>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-xs">Guidelines for Examination of AYUSH Inventions</h4>
+                <p class="text-[11px] text-slate-600 leading-relaxed mt-0.5">
+                  Provides exact decision tree used by Indian patent examiners to cross-check claims against the Traditional Knowledge Digital Library prior art references.
+                </p>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-[10px] text-slate-500 space-y-1">
+                <div class="flex justify-between">
+                  <span class="">Issuing Body:</span>
+                  <span class="font-medium text-slate-700">CGPDTM / Ministry of Commerce</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="">Version Date:</span>
+                  <span class="font-medium text-slate-700">October 2012 (In force)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Citation 4: Biological Diversity Act 2002 Section 6 / Form III -->
+            <div id="cit-card-4" class="border border-slate-200 rounded p-3 bg-white hover:border-teal-300 transition space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  Biological Diversity Act § 6
+                </span>
+                <span class="text-[9px] font-mono text-emerald-800 bg-emerald-100 px-1 rounded">Prior Approval</span>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-xs">Application for Intellectual Property Rights (Form III)</h4>
+                <p class="text-[11px] text-slate-600 leading-relaxed mt-0.5">
+                  No person shall apply for any intellectual property right, in or outside India, for any invention based on any research on biological resources obtained from India without approval of NBA.
+                </p>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-[10px] text-slate-500 space-y-1">
+                <div class="flex justify-between">
+                  <span class="">Regulator:</span>
+                  <span class="font-medium text-slate-700">National Biodiversity Authority (Chennai)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="">Filing Mode:</span>
+                  <span class="font-medium text-slate-700">NBA Portal Form III</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Registry integration is not available in this frontend build. -->
+          <div class="p-3 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-500 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-slate-700 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                Registry lookup
+              </span>
+              <span class="font-mono text-slate-400">Not connected</span>
+            </div>
+            <p>No current registry status is displayed.</p>
+          </div>
+        </aside>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MOBILE BOTTOM SHEET EVIDENCE DRAWER (Triggered on small screens) -->
+      <!-- ========================================================================= -->
+      <div id="mobile-evidence-sheet" class="fixed inset-0 bg-slate-900/60 z-50 flex flex-col justify-end hidden md:hidden">
+        <div class="bg-white rounded-t-xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+          <div class="p-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+              <h3 class="text-xs font-bold text-slate-900 uppercase">Statutory Evidence Sheet</h3>
+            </div>
+            <button onclick="toggleMobileEvidenceSheet()" class="p-1 text-slate-500 text-sm font-bold">× Close</button>
+          </div>
+          <div class="p-4 overflow-y-auto space-y-3 text-xs" id="mobile-sheet-content">
+            <div id="mobile-fixture-notice" class="hidden rounded border border-amber-200 bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-950">
+              Illustrative citation fixtures only; not verified or live registry data.
+            </div>
+            <!-- Mobile clones of citations will render here -->
+            <div class="border border-slate-200 p-2.5 rounded">
+              <span class="font-mono text-[10px] bg-teal-50 text-teal-800 font-bold px-1 rounded">Patents Act § 3(p)</span>
+              <p class="mt-1 text-slate-700">Traditional Knowledge exclusion from patentability under Indian Patents Act.</p>
+            </div>
+            <div class="border border-slate-200 p-2.5 rounded">
+              <span class="font-mono text-[10px] bg-amber-50 text-amber-800 font-bold px-1 rounded">Patents Act § 3(e)</span>
+              <p class="mt-1 text-slate-700">Synergistic efficacy requirement for multi-herb or bio-enhancer formulations.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="/app.js"></script>
+
+
+
+</body></html>
