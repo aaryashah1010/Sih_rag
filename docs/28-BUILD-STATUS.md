@@ -3,7 +3,7 @@
 Tracks what actually exists in the repo against the plan in `19-IMPLEMENTATION-BACKLOG.md`.
 Update this file, not the blueprint docs, as features land.
 
-Last updated: 2026-09-29.
+Last updated: 2026-09-30.
 
 ## Done
 
@@ -44,6 +44,17 @@ Last updated: 2026-09-29.
   `RAG_RETRIEVAL_UNAVAILABLE` otherwise. No answer is ever generated without evidence.
 - 10 pytest tests (`tests/test_internal_api.py`): token rejection cases, schema
   validation, fail-closed behavior.
+
+**P2.1 Escalations and consent**
+- Added authenticated `POST /api/v1/escalations` and `GET /api/v1/escalations/:id`.
+- Reused `app.escalations` and `app.consent_records`; creation and audit writes share a
+  database transaction. USER reads are owner-scoped, EXPERT reads are assignment-scoped,
+  and ADMIN cannot access case contents.
+- Sensitive conversation, invention, and contact details require explicit
+  `ESCALATION_REVIEW` consent. Audit events record consent/escalation metadata without
+  case payloads. No database migration was needed.
+- Added focused fake-backed API tests for consent, ownership/role access, strict input,
+  Problem Details, audit data minimization, and transactional rollback.
 
 **P1.1–P1.4 Ingestion**
 - Source manifest, allowlisted fetcher, PDF/HTML parser, section/chunk builder (from

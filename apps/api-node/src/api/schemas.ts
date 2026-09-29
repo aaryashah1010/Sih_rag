@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { JURISDICTIONS } from "../domain/types.js";
+import { ESCALATION_CONSENT_PURPOSE, JURISDICTIONS } from "../domain/types.js";
 
 const language = z.string().regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/, "must be a language tag such as en or hi");
 
@@ -51,3 +51,15 @@ export const chatBody = z.object({
   language: language.optional(),
   product_context: z.record(z.unknown()).default({}),
 }).strict();
+
+export const escalationCreateBody = z.object({
+  answer_id: z.string().uuid(),
+  reason: z.string().trim().min(1).max(500),
+  include_conversation: z.boolean().optional(),
+  invention_details: z.string().trim().min(1).max(8000).optional(),
+  include_contact_information: z.boolean().optional(),
+  consent: z.object({ granted: z.boolean(), purpose: z.literal(ESCALATION_CONSENT_PURPOSE), notice_version: z.string().trim().min(1).max(64) }).strict().optional(),
+}).strict().superRefine((value, context) => {
+  const sensitive = value.include_conversation || value.invention_details !== undefined || value.include_contact_information;
+  if (sensitive && value.consent?.granted !== true) context.addIssue({ code: "custom", path: ["consent"], message: "Granted consent is required when including sensitive information." });
+});

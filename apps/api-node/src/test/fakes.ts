@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { pino } from "pino";
 import { buildApp } from "../app.js";
 import { conflict } from "../domain/errors.js";
-import type { ChatSession, Message, User } from "../domain/types.js";
+import type { ChatSession, ConsentRecord, EscalationRecord, Message, User } from "../domain/types.js";
 import type { RagClient, RagQueryResponse } from "../ports/rag-client.js";
 import type { RefreshTokenRecord, Repositories, StoredAnswer } from "../ports/repositories.js";
 
@@ -14,6 +14,8 @@ export function fakeRepositories() {
   const messages: Message[] = [];
   const answers = new Map<string, StoredAnswer>();
   const audit: unknown[] = [];
+  const consents = new Map<string, ConsentRecord>();
+  const escalations = new Map<string, EscalationRecord>();
 
   const repositories: Repositories = {
     ping: async () => true,
@@ -98,6 +100,14 @@ export function fakeRepositories() {
       async findAnswerForUserMessage(userMessageId) {
         return answers.get(userMessageId) ?? null;
       },
+      async findEscalationContext(answerId, userId, includeConversation) {
+        const entry = [...answers.entries()].find(([, answer]) => answer.answerId === answerId);
+        if (!entry) return null;
+        const question = messages.find((message) => message.id === entry[0]);
+        const session = question && sessions.get(question.sessionId);
+        if (!question || session?.userId !== userId) return null;
+        return { answer: entry[1], jurisdiction: session.jurisdiction, conversation: includeConversation ? messages.filter((message) => message.sessionId === session.id) : [] };
+      },
       async saveAnswer({ sessionId, userMessageId, language, rag }) {
         const stored: StoredAnswer = {
           answerId: randomUUID(),
@@ -122,8 +132,30 @@ export function fakeRepositories() {
         audit.push(event);
       },
     },
+    consents: {
+      async create(input) {
+        const record: ConsentRecord = { id: randomUUID(), userId: input.userId, purpose: input.purpose, noticeVersion: input.noticeVersion, granted: input.granted, grantedAt: input.granted ? new Date() : null, revokedAt: null, createdAt: new Date() };
+        consents.set(record.id, record);
+        return record;
+      },
+    },
+    escalations: {
+      async create(input) {
+        const record: EscalationRecord = { id: randomUUID(), answerId: input.answerId, userId: input.userId, assignedExpertId: null, consentRecordId: input.consentRecordId, reason: input.reason, casePayload: input.casePayload, status: "OPEN", createdAt: new Date(), updatedAt: new Date() };
+        escalations.set(record.id, record);
+        return record;
+      },
+      async findById(id) { return escalations.get(id) ?? null; },
+      async findForUser(id, userId) { const record = escalations.get(id); return record?.userId === userId ? record : null; },
+      async findForExpert(id, expertId) { const record = escalations.get(id); return record?.assignedExpertId === expertId ? record : null; },
+    },
+    async transaction(work) {
+      const consentSnapshot = new Map(consents), escalationSnapshot = new Map(escalations), auditLength = audit.length;
+      try { return await work({ consents: repositories.consents, escalations: repositories.escalations, audit: repositories.audit }); }
+      catch (error) { consents.clear(); for (const [id, item] of consentSnapshot) consents.set(id, item); escalations.clear(); for (const [id, item] of escalationSnapshot) escalations.set(id, item); audit.length = auditLength; throw error; }
+    },
   };
-  return { repositories, messages, audit, tokens };
+  return { repositories, messages, audit, tokens, consents, escalations, answers, sessions, users };
 }
 
 export const abstainResponse: RagQueryResponse = {

@@ -1,4 +1,4 @@
-import type { ChatSession, Jurisdiction, Message, Page, User } from "../domain/types.js";
+import type { ChatSession, ConsentRecord, EscalationCaseDetails, EscalationRecord, Jurisdiction, Message, Page, User } from "../domain/types.js";
 import type { RagQueryResponse } from "./rag-client.js";
 
 export interface UserRepository {
@@ -62,13 +62,14 @@ export interface MessageRepository {
     clientMessageId: string;
   }): Promise<{ message: Message; created: boolean }>;
   findAnswerForUserMessage(userMessageId: string): Promise<StoredAnswer | null>;
+  findEscalationContext(answerId: string, userId: string, includeConversation: boolean): Promise<{ answer: StoredAnswer; jurisdiction: Jurisdiction; conversation: Message[] } | null>;
   /** Persists assistant message, answer, claims and citations in one transaction (idempotent per user message). */
   saveAnswer(input: { sessionId: string; userMessageId: string; language: string; rag: RagQueryResponse }): Promise<StoredAnswer>;
 }
 
 export type AuditEvent = {
   requestId?: string;
-  actorType: "USER" | "ADMIN" | "NODE_API" | "SYSTEM";
+  actorType: "USER" | "EXPERT" | "ADMIN" | "NODE_API" | "SYSTEM";
   actorId?: string | null;
   eventType: string;
   entityType?: string;
@@ -76,6 +77,17 @@ export type AuditEvent = {
   outcome?: string;
   data?: Record<string, unknown>;
 };
+
+export interface ConsentRepository {
+  create(input: { userId: string; purpose: string; noticeVersion: string; granted: boolean }): Promise<ConsentRecord>;
+}
+export interface EscalationRepository {
+  create(input: { answerId: string; userId: string; consentRecordId: string | null; reason: string; casePayload: EscalationCaseDetails }): Promise<EscalationRecord>;
+  findById(id: string): Promise<EscalationRecord | null>;
+  findForUser(id: string, userId: string): Promise<EscalationRecord | null>;
+  findForExpert(id: string, expertId: string): Promise<EscalationRecord | null>;
+}
+export type EscalationTransaction = { consents: ConsentRepository; escalations: EscalationRepository; audit: AuditRepository };
 
 export interface AuditRepository {
   record(event: AuditEvent): Promise<void>;
@@ -86,6 +98,9 @@ export type Repositories = {
   refreshTokens: RefreshTokenRepository;
   sessions: SessionRepository;
   messages: MessageRepository;
+  consents: ConsentRepository;
+  escalations: EscalationRepository;
+  transaction<T>(work: (repositories: EscalationTransaction) => Promise<T>): Promise<T>;
   audit: AuditRepository;
   ping(): Promise<boolean>;
 };
