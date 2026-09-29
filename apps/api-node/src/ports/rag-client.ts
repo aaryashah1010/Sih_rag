@@ -1,0 +1,56 @@
+import { z } from "zod";
+import { DECISIONS } from "../domain/types.js";
+
+export type RagQueryRequest = {
+  request_id: string;
+  trace_id: string;
+  session_id: string;
+  message_id: string;
+  query: string;
+  jurisdiction: "INDIA" | "INTERNATIONAL";
+  language: string;
+  product_context: Record<string, unknown>;
+};
+
+export const ragCitationSchema = z.object({
+  label: z.string(),
+  chunk_id: z.string().uuid(),
+  authority: z.string(),
+  document_title: z.string(),
+  locator: z.string().nullable().optional(),
+  quoted_span: z.string().nullable().optional(),
+  source_url: z.string().nullable().optional(),
+  page_start: z.number().int().nullable().optional(),
+  page_end: z.number().int().nullable().optional(),
+});
+
+export const ragClaimSchema = z.object({
+  claim_index: z.number().int().nonnegative(),
+  claim_text: z.string(),
+  support_status: z.enum(["SUPPORTED", "PARTIAL", "UNSUPPORTED", "NOT_APPLICABLE"]),
+  verifier_score: z.number().min(0).max(1).nullable().optional(),
+  citation_labels: z.array(z.string()).default([]),
+});
+
+export const ragQueryResponseSchema = z.object({
+  retrieval_run_id: z.string().uuid().nullable(),
+  corpus_version_id: z.string().uuid().nullable(),
+  decision: z.enum(DECISIONS),
+  answer: z.string(),
+  confidence: z.number().min(0).max(1).nullable().optional(),
+  model: z.object({ name: z.string(), version: z.string().nullable().optional() }),
+  policy_version: z.string(),
+  claims: z.array(ragClaimSchema).default([]),
+  citations: z.array(ragCitationSchema).default([]),
+  missing_information: z.array(z.string()).default([]),
+  timings_ms: z.record(z.number()).default({}),
+});
+
+export type RagQueryResponse = z.infer<typeof ragQueryResponseSchema>;
+
+export type RagCaller = { userId: string; role: string; requestId: string };
+
+export interface RagClient {
+  query(request: RagQueryRequest, caller: RagCaller): Promise<RagQueryResponse>;
+  ready(): Promise<{ ok: boolean; activeCorpus: string | null }>;
+}

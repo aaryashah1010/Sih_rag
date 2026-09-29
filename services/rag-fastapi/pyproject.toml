@@ -9,14 +9,34 @@ requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115,<1.0",
   "uvicorn[standard]>=0.34,<1.0",
+  "pydantic-settings>=2.7,<3.0",
+  "SQLAlchemy[asyncio]>=2.0.36,<2.1",
+  "psycopg[binary]>=3.2,<4.0",
+  "alembic>=1.14,<2.0",
+  "PyJWT>=2.10,<3.0",
   "beautifulsoup4>=4.13,<5.0",
   "httpx>=0.28,<1.0",
   "PyMuPDF>=1.25,<2.0",
   "PyYAML>=6.0,<7.0",
+  # Local open-source embedding model (ADR-002). Needed both at ingestion time (batch-embed a
+  # corpus) and at query time (embed the incoming question), so it lives in core dependencies
+  # rather than an optional extra.
+  "sentence-transformers>=3.3,<4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9.0",
+  "pytest-asyncio>=0.25,<1.0",
 ]
 
 [project.scripts]
 ipsakti-ingest = "rag_service.ingestion.cli:main"
+ipsakti-load-corpus = "rag_service.ingestion.load_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

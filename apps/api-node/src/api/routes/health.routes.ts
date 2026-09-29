@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { getHealth } from "../controllers/health.controller.js";
+import type { RagClient } from "../../ports/rag-client.js";
+import { getHealth, readinessController } from "../controllers/health.controller.js";
 
-export const healthRouter = Router();
-healthRouter.get("/healthz", getHealth);
+export function healthRouter(ping: () => Promise<boolean>, rag: RagClient): Router {
+  const router = Router();
+  router.get("/healthz", getHealth);
+  router.get("/readyz", readinessController(ping, rag));
+  return router;
+}
