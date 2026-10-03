@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
 import { AppError, conflict } from "../../domain/errors.js";
-import type { ChatSession, Message, Page, User } from "../../domain/types.js";
+import type { ChatSession, ConsentRecord, EscalationCaseDetails, EscalationRecord, Message, Page, User } from "../../domain/types.js";
 import type {
   AuditEvent,
   RefreshTokenRecord,
@@ -96,7 +96,6 @@ export function createPostgresRepositories(db: Knex): Repositories {
         const row = await db("app.users").where({ id }).first(USER_COLUMNS);
         return row ? toUser(row) : null;
       },
-
       async updateProfile(id, patch) {
         const changes: Row = {};
         if (patch.displayName !== undefined) changes.display_name = patch.displayName;
@@ -218,6 +217,15 @@ export function createPostgresRepositories(db: Knex): Repositories {
         return answer ? loadStoredAnswer(db, answer) : null;
       },
 
+      async findEscalationContext(answerId, userId, includeConversation) {
+        const row = await db("app.answers as a").join("app.messages as m", "m.id", "a.user_message_id").join("app.sessions as s", "s.id", "m.session_id")
+          .where("a.id", answerId).where("s.user_id", userId).select("a.*", "s.jurisdiction_code", "s.id as session_id").first();
+        if (!row) return null;
+        const answer = await loadStoredAnswer(db, row);
+        const conversation = includeConversation ? (await db("app.messages").where({ session_id: row.session_id }).whereIn("role", ["USER", "ASSISTANT"]).orderBy("created_at").select("*")).map(toMessage) : [];
+        return { answer, jurisdiction: row.jurisdiction_code, conversation };
+      },
+
       async saveAnswer({ sessionId, userMessageId, language, rag }) {
         return db.transaction(async (trx) => {
           const existing = await trx("app.answers").where({ user_message_id: userMessageId }).forUpdate().first();
@@ -267,9 +275,43 @@ export function createPostgresRepositories(db: Knex): Repositories {
         });
       },
     },
+
+    consents: {
+      async create({ userId, purpose, noticeVersion, granted }) {
+        const [row] = await db("app.consent_records").insert({ user_id: userId, purpose, notice_version: noticeVersion, granted, granted_at: granted ? db.fn.now() : null }).returning("*");
+        return toConsent(row);
+      },
+    },
+    escalations: {
+      async create({ answerId, userId, consentRecordId, reason, casePayload }) {
+        const [row] = await db("app.escalations").insert({ answer_id: answerId, user_id: userId, consent_record_id: consentRecordId, reason, case_payload: JSON.stringify(casePayload) }).returning("*");
+        return toEscalation(row);
+      },
+      async findById(id) {
+        const row = await db("app.escalations").where({ id }).first();
+        return row ? toEscalation(row) : null;
+      },
+      async findForUser(id, userId) {
+        const row = await db("app.escalations").where({ id, user_id: userId }).first();
+        return row ? toEscalation(row) : null;
+      },
+      async findForExpert(id, expertId) {
+        const row = await db("app.escalations").where({ id, assigned_expert_id: expertId }).first();
+        return row ? toEscalation(row) : null;
+      },
+    },
+    async transaction(work) {
+      return db.transaction(async (trx) => {
+        const scoped = createPostgresRepositories(trx as unknown as Knex);
+        return work({ consents: scoped.consents, escalations: scoped.escalations, audit: scoped.audit });
+      });
+    },
   };
 
 }
+
+const toConsent = (row: Row): ConsentRecord => ({ id: row.id, userId: row.user_id, purpose: row.purpose, noticeVersion: row.notice_version, granted: row.granted, grantedAt: row.granted_at, revokedAt: row.revoked_at, createdAt: row.created_at });
+const toEscalation = (row: Row): EscalationRecord => ({ id: row.id, answerId: row.answer_id, userId: row.user_id, assignedExpertId: row.assigned_expert_id, consentRecordId: row.consent_record_id, reason: row.reason, casePayload: typeof row.case_payload === "string" ? JSON.parse(row.case_payload) : row.case_payload, status: row.status, createdAt: row.created_at, updatedAt: row.updated_at });
 
 const isUuid = (value: string | undefined): value is string =>
   !!value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
